@@ -19,6 +19,8 @@ export interface AsciiMeshStats {
 export interface AsciiMeshHandle {
   getCanvas: () => HTMLCanvasElement | null
   resetView: () => void
+  /** Current frame as plain-text ASCII. */
+  getText: () => string
 }
 
 export interface AsciiMeshProps {
@@ -59,6 +61,7 @@ export function AsciiMesh({
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const rendererRef = useRef<AsciiRenderer | null>(null)
   const [size, setSize] = useState({ w: 0, h: 0 })
+  const [grabbing, setGrabbing] = useState(false)
 
   const { data: loaded, isValidating } = useSWR(['ascii-source', sourceKey(spec)], () => loadSource(spec), {
     revalidateOnFocus: false,
@@ -160,7 +163,11 @@ export function AsciiMesh({
     dirtyRef.current = true
   }, [])
 
-  useImperativeHandle(ref, () => ({ getCanvas: () => canvasRef.current, resetView }), [resetView])
+  useImperativeHandle(
+    ref,
+    () => ({ getCanvas: () => canvasRef.current, resetView, getText: () => rendererRef.current?.toText() ?? '' }),
+    [resetView],
+  )
 
   useEffect(() => {
     const container = containerRef.current
@@ -175,7 +182,13 @@ export function AsciiMesh({
     let height = 0
     let dpr = 1
     let visible = true
-    const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+    const motionQuery = window.matchMedia('(prefers-reduced-motion: reduce)')
+    let reducedMotion = motionQuery.matches
+    const onMotionPref = () => {
+      reducedMotion = motionQuery.matches
+      dirtyRef.current = true
+    }
+    motionQuery.addEventListener('change', onMotionPref)
 
     const resize = () => {
       const rect = container.getBoundingClientRect()
@@ -285,6 +298,7 @@ export function AsciiMesh({
     return () => {
       cancelAnimationFrame(raf)
       resizeObserver.disconnect()
+      motionQuery.removeEventListener('change', onMotionPref)
       intersection.disconnect()
       rendererRef.current = null
     }
@@ -294,9 +308,11 @@ export function AsciiMesh({
     const canvas = canvasRef.current
     if (!canvas) return
     const onWheel = (e: WheelEvent) => {
-      if (!cfgRef.current.wheelZoom) return
+      // Trackpad pinch arrives as ctrl+wheel; treat it as zoom whenever the mesh is interactive.
+      const pinch = e.ctrlKey && cfgRef.current.interactive
+      if (!cfgRef.current.wheelZoom && !pinch) return
       e.preventDefault()
-      zoomMulRef.current = Math.min(3, Math.max(0.4, zoomMulRef.current * Math.exp(-e.deltaY * 0.0015)))
+      zoomMulRef.current = Math.min(3, Math.max(0.4, zoomMulRef.current * Math.exp(-e.deltaY * (pinch ? 0.01 : 0.0015))))
       dirtyRef.current = true
     }
     canvas.addEventListener('wheel', onWheel, { passive: false })
@@ -321,6 +337,7 @@ export function AsciiMesh({
       return
     }
     if (pts.size > 2) return
+    setGrabbing(true)
     u.dragging = true
     u.vx = 0
     u.vy = 0
@@ -373,12 +390,31 @@ export function AsciiMesh({
       u.lastT = performance.now()
       return
     }
+    setGrabbing(false)
     if (!u.dragging) return
     u.dragging = false
     if (performance.now() - u.lastT > 90) {
       u.vx = 0
       u.vy = 0
     }
+  }
+
+  // Arrow keys rotate (shift = bigger steps), +/- zoom, 0 resets — keyboard parity with drag.
+  const onKeyDown = (e: React.KeyboardEvent<HTMLCanvasElement>) => {
+    if (!cfgRef.current.interactive || e.metaKey || e.ctrlKey || e.altKey) return
+    const step = e.shiftKey ? 30 : 10
+    const u = userRef.current
+    if (e.key === 'ArrowLeft') u.y -= step
+    else if (e.key === 'ArrowRight') u.y += step
+    else if (e.key === 'ArrowUp') u.x -= step
+    else if (e.key === 'ArrowDown') u.x += step
+    else if (e.key === '+' || e.key === '=') zoomMulRef.current = Math.min(3, zoomMulRef.current * 1.15)
+    else if (e.key === '-') zoomMulRef.current = Math.max(0.4, zoomMulRef.current / 1.15)
+    else if (e.key === '0') resetView()
+    else return
+    e.preventDefault()
+    e.stopPropagation()
+    dirtyRef.current = true
   }
 
   return (
@@ -396,13 +432,16 @@ export function AsciiMesh({
         onPointerUp={endDrag}
         onPointerCancel={endDrag}
         onDoubleClick={resetView}
+        onKeyDown={onKeyDown}
+        tabIndex={cfg.interactive ? 0 : undefined}
         style={{
           position: 'absolute',
           inset: 0,
           width: '100%',
           height: '100%',
           touchAction: cfg.interactive ? 'none' : 'auto',
-          cursor: cfg.interactive ? 'grab' : 'default',
+          cursor: cfg.interactive ? (grabbing ? 'grabbing' : 'grab') : 'default',
+          outline: 'none',
         }}
       />
     </div>

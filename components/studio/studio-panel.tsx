@@ -6,6 +6,7 @@ import {
   CHARSETS,
   FONT_OPTIONS,
   LOOKS,
+  DEFAULT_CONFIG,
   type AsciiConfig,
   type ColorMode,
   type MaskMode,
@@ -37,6 +38,11 @@ interface StudioPanelProps {
   onCopyCode: () => void
   onCopyJson: () => void
   onDownloadPng: () => void
+  onCopyImage: () => void
+  onCopyText: () => void
+  onRecord: () => void
+  recording: boolean
+  onShare: () => void
   copied: string | null
 }
 
@@ -55,6 +61,11 @@ export function StudioPanel({
   onCopyCode,
   onCopyJson,
   onDownloadPng,
+  onCopyImage,
+  onCopyText,
+  onRecord,
+  recording,
+  onShare,
   copied,
 }: StudioPanelProps) {
   const fileRef = useRef<HTMLInputElement>(null)
@@ -151,6 +162,7 @@ export function StudioPanel({
                 min={300}
                 max={900}
                 step={100}
+                defaultValue={800}
                 onChange={(weight) => onSource({ ...source, weight })}
               />
             </div>
@@ -161,7 +173,7 @@ export function StudioPanel({
       <Section title="Look" defaultOpen>
         <ChipRow
           label="Presets"
-          value={null}
+          value={LOOKS.find((l) => Object.entries(l.patch).every(([k, v]) => cfg[k as keyof AsciiConfig] === v))?.key ?? null}
           options={LOOKS.map((l) => ({ value: l.key, label: l.label }))}
           onChange={(key) => {
             const look = LOOKS.find((l) => l.key === key)
@@ -181,9 +193,9 @@ export function StudioPanel({
           onChange={(shape) => onChange({ shape })}
         />
         {cfg.shape === 'extrude' ? (
-          <SliderField label="Thickness" value={cfg.thickness} min={0} max={0.8} step={0.01} onChange={(thickness) => onChange({ thickness })} />
+          <SliderField label="Thickness" value={cfg.thickness} min={0} max={0.8} step={0.01} onChange={(thickness) => onChange({ thickness })} defaultValue={DEFAULT_CONFIG.thickness} />
         ) : (
-          <SliderField label="Relief depth" value={cfg.reliefDepth} min={0} max={1} step={0.01} onChange={(reliefDepth) => onChange({ reliefDepth })} />
+          <SliderField label="Relief depth" value={cfg.reliefDepth} min={0} max={1} step={0.01} onChange={(reliefDepth) => onChange({ reliefDepth })} defaultValue={DEFAULT_CONFIG.reliefDepth} />
         )}
         <SelectField<MaskMode>
           label="Silhouette from"
@@ -197,8 +209,8 @@ export function StudioPanel({
           ]}
           onChange={(maskMode) => onChange({ maskMode })}
         />
-        <SliderField label="Threshold" value={cfg.threshold} min={0.02} max={0.98} step={0.01} onChange={(threshold) => onChange({ threshold })} format={pct} />
-        <SliderField label="Edge smoothing" value={cfg.smooth} min={0} max={4} step={1} onChange={(smooth) => onChange({ smooth })} />
+        <SliderField label="Threshold" value={cfg.threshold} min={0.02} max={0.98} step={0.01} onChange={(threshold) => onChange({ threshold })} defaultValue={DEFAULT_CONFIG.threshold} format={pct} />
+        <SliderField label="Edge smoothing" value={cfg.smooth} min={0} max={4} step={1} onChange={(smooth) => onChange({ smooth })} defaultValue={DEFAULT_CONFIG.smooth} />
         <ToggleField label="Invert silhouette" value={cfg.invertMask} onChange={(invertMask) => onChange({ invertMask })} />
       </Section>
 
@@ -218,11 +230,18 @@ export function StudioPanel({
           onChange={(charset) => onChange({ charset })}
           placeholder=" .:-=+*#%@"
         />
+        <button
+          type="button"
+          onClick={() => onChange({ charset: Array.from(cfg.charset).reverse().join('') })}
+          className="-mt-2 self-start text-[11px] tracking-widest text-muted-foreground uppercase hover:text-foreground focus-visible:outline focus-visible:outline-1 focus-visible:outline-dashed"
+        >
+          ⇄ Reverse ramp
+        </button>
         <SelectField label="Typeface" value={cfg.fontKey} options={fontOptions} onChange={(fontKey) => onChange({ fontKey })} />
-        <SliderField label="Font weight" value={cfg.fontWeight} min={300} max={800} step={100} onChange={(fontWeight) => onChange({ fontWeight })} />
-        <SliderField label="Cell size" value={cfg.cellSize} min={4} max={24} step={1} onChange={(cellSize) => onChange({ cellSize })} format={(v) => `${v}px`} />
-        <SliderField label="Cell aspect" value={cfg.cellAspect} min={0.6} max={2.4} step={0.05} onChange={(cellAspect) => onChange({ cellAspect })} format={(v) => v.toFixed(2)} />
-        <SliderField label="Glyph scale" value={cfg.glyphScale} min={0.5} max={1.8} step={0.05} onChange={(glyphScale) => onChange({ glyphScale })} format={(v) => v.toFixed(2)} />
+        <SliderField label="Font weight" value={cfg.fontWeight} min={300} max={800} step={100} onChange={(fontWeight) => onChange({ fontWeight })} defaultValue={DEFAULT_CONFIG.fontWeight} />
+        <SliderField label="Cell size" value={cfg.cellSize} min={4} max={24} step={1} onChange={(cellSize) => onChange({ cellSize })} defaultValue={DEFAULT_CONFIG.cellSize} format={(v) => `${v}px`} />
+        <SliderField label="Cell aspect" value={cfg.cellAspect} min={0.6} max={2.4} step={0.05} onChange={(cellAspect) => onChange({ cellAspect })} defaultValue={DEFAULT_CONFIG.cellAspect} format={(v) => v.toFixed(2)} />
+        <SliderField label="Glyph scale" value={cfg.glyphScale} min={0.5} max={1.8} step={0.05} onChange={(glyphScale) => onChange({ glyphScale })} defaultValue={DEFAULT_CONFIG.glyphScale} format={(v) => v.toFixed(2)} />
       </Section>
 
       <Section title="Color">
@@ -239,7 +258,16 @@ export function StudioPanel({
         />
         <ColorField label={cfg.colorMode === 'mono' ? 'Glyph color' : 'Bright color'} value={cfg.fg} onChange={(fg) => onChange({ fg })} />
         {(cfg.colorMode === 'gradient' || cfg.colorMode === 'depth') && (
-          <ColorField label="Dark color" value={cfg.fg2} onChange={(fg2) => onChange({ fg2 })} />
+          <>
+            <ColorField label="Dark color" value={cfg.fg2} onChange={(fg2) => onChange({ fg2 })} />
+            <button
+              type="button"
+              onClick={() => onChange({ fg: cfg.fg2, fg2: cfg.fg })}
+              className="-mt-2 self-start text-[11px] tracking-widest text-muted-foreground uppercase hover:text-foreground focus-visible:outline focus-visible:outline-1 focus-visible:outline-dashed"
+            >
+              ⇅ Swap colors
+            </button>
+          </>
         )}
         <ColorField label="Background" value={cfg.bg} onChange={(bg) => onChange({ bg })} />
         <ToggleField label="Transparent background" value={cfg.transparentBg} onChange={(transparentBg) => onChange({ transparentBg })} />
@@ -256,14 +284,14 @@ export function StudioPanel({
           ]}
           onChange={(shade) => onChange({ shade })}
         />
-        <SliderField label="Light azimuth" value={cfg.lightAzimuth} min={-180} max={180} step={1} onChange={(lightAzimuth) => onChange({ lightAzimuth })} format={deg} />
-        <SliderField label="Light elevation" value={cfg.lightElevation} min={-90} max={90} step={1} onChange={(lightElevation) => onChange({ lightElevation })} format={deg} />
+        <SliderField label="Light azimuth" value={cfg.lightAzimuth} min={-180} max={180} step={1} onChange={(lightAzimuth) => onChange({ lightAzimuth })} defaultValue={DEFAULT_CONFIG.lightAzimuth} format={deg} />
+        <SliderField label="Light elevation" value={cfg.lightElevation} min={-90} max={90} step={1} onChange={(lightElevation) => onChange({ lightElevation })} defaultValue={DEFAULT_CONFIG.lightElevation} format={deg} />
         <ToggleField label="Light follows cursor" value={cfg.pointerLight} onChange={(pointerLight) => onChange({ pointerLight })} />
-        <SliderField label="Ambient" value={cfg.ambient} min={0} max={1} step={0.01} onChange={(ambient) => onChange({ ambient })} format={pct} />
-        <SliderField label="Brightness" value={cfg.brightness} min={-0.5} max={0.5} step={0.01} onChange={(brightness) => onChange({ brightness })} />
-        <SliderField label="Contrast" value={cfg.contrast} min={0.3} max={3} step={0.05} onChange={(contrast) => onChange({ contrast })} format={(v) => v.toFixed(2)} />
-        <SliderField label="Gamma" value={cfg.gamma} min={0.3} max={3} step={0.05} onChange={(gamma) => onChange({ gamma })} format={(v) => v.toFixed(2)} />
-        <SliderField label="Depth fade" value={cfg.depthFade} min={0} max={1} step={0.01} onChange={(depthFade) => onChange({ depthFade })} format={pct} />
+        <SliderField label="Ambient" value={cfg.ambient} min={0} max={1} step={0.01} onChange={(ambient) => onChange({ ambient })} defaultValue={DEFAULT_CONFIG.ambient} format={pct} />
+        <SliderField label="Brightness" value={cfg.brightness} min={-0.5} max={0.5} step={0.01} onChange={(brightness) => onChange({ brightness })} defaultValue={DEFAULT_CONFIG.brightness} />
+        <SliderField label="Contrast" value={cfg.contrast} min={0.3} max={3} step={0.05} onChange={(contrast) => onChange({ contrast })} defaultValue={DEFAULT_CONFIG.contrast} format={(v) => v.toFixed(2)} />
+        <SliderField label="Gamma" value={cfg.gamma} min={0.3} max={3} step={0.05} onChange={(gamma) => onChange({ gamma })} defaultValue={DEFAULT_CONFIG.gamma} format={(v) => v.toFixed(2)} />
+        <SliderField label="Depth fade" value={cfg.depthFade} min={0} max={1} step={0.01} onChange={(depthFade) => onChange({ depthFade })} defaultValue={DEFAULT_CONFIG.depthFade} format={pct} />
         <ToggleField label="Invert tones" value={cfg.invert} onChange={(invert) => onChange({ invert })} />
       </Section>
 
@@ -280,38 +308,38 @@ export function StudioPanel({
         />
         {cfg.motion === 'spin' && (
           <>
-            <SliderField label="Spin Y (turntable)" value={cfg.spinY} min={-180} max={180} step={1} onChange={(spinY) => onChange({ spinY })} format={(v) => `${Math.round(v)}°/s`} />
-            <SliderField label="Spin X (flip)" value={cfg.spinX} min={-180} max={180} step={1} onChange={(spinX) => onChange({ spinX })} format={(v) => `${Math.round(v)}°/s`} />
-            <SliderField label="Spin Z (roll)" value={cfg.spinZ} min={-180} max={180} step={1} onChange={(spinZ) => onChange({ spinZ })} format={(v) => `${Math.round(v)}°/s`} />
+            <SliderField label="Spin Y (turntable)" value={cfg.spinY} min={-180} max={180} step={1} onChange={(spinY) => onChange({ spinY })} defaultValue={DEFAULT_CONFIG.spinY} format={(v) => `${Math.round(v)}°/s`} />
+            <SliderField label="Spin X (flip)" value={cfg.spinX} min={-180} max={180} step={1} onChange={(spinX) => onChange({ spinX })} defaultValue={DEFAULT_CONFIG.spinX} format={(v) => `${Math.round(v)}°/s`} />
+            <SliderField label="Spin Z (roll)" value={cfg.spinZ} min={-180} max={180} step={1} onChange={(spinZ) => onChange({ spinZ })} defaultValue={DEFAULT_CONFIG.spinZ} format={(v) => `${Math.round(v)}°/s`} />
           </>
         )}
         {cfg.motion === 'sway' && (
           <>
-            <SliderField label="Sway Y range" value={cfg.swayY} min={0} max={90} step={1} onChange={(swayY) => onChange({ swayY })} format={deg} />
-            <SliderField label="Sway X range" value={cfg.swayX} min={0} max={90} step={1} onChange={(swayX) => onChange({ swayX })} format={deg} />
-            <SliderField label="Sway speed" value={cfg.swaySpeed} min={0.1} max={4} step={0.05} onChange={(swaySpeed) => onChange({ swaySpeed })} format={(v) => v.toFixed(2)} />
+            <SliderField label="Sway Y range" value={cfg.swayY} min={0} max={90} step={1} onChange={(swayY) => onChange({ swayY })} defaultValue={DEFAULT_CONFIG.swayY} format={deg} />
+            <SliderField label="Sway X range" value={cfg.swayX} min={0} max={90} step={1} onChange={(swayX) => onChange({ swayX })} defaultValue={DEFAULT_CONFIG.swayX} format={deg} />
+            <SliderField label="Sway speed" value={cfg.swaySpeed} min={0.1} max={4} step={0.05} onChange={(swaySpeed) => onChange({ swaySpeed })} defaultValue={DEFAULT_CONFIG.swaySpeed} format={(v) => v.toFixed(2)} />
           </>
         )}
-        <SliderField label="Base tilt X" value={cfg.rotX} min={-180} max={180} step={1} onChange={(rotX) => onChange({ rotX })} format={deg} />
-        <SliderField label="Base turn Y" value={cfg.rotY} min={-180} max={180} step={1} onChange={(rotY) => onChange({ rotY })} format={deg} />
-        <SliderField label="Base roll Z" value={cfg.rotZ} min={-180} max={180} step={1} onChange={(rotZ) => onChange({ rotZ })} format={deg} />
+        <SliderField label="Base tilt X" value={cfg.rotX} min={-180} max={180} step={1} onChange={(rotX) => onChange({ rotX })} defaultValue={DEFAULT_CONFIG.rotX} format={deg} />
+        <SliderField label="Base turn Y" value={cfg.rotY} min={-180} max={180} step={1} onChange={(rotY) => onChange({ rotY })} defaultValue={DEFAULT_CONFIG.rotY} format={deg} />
+        <SliderField label="Base roll Z" value={cfg.rotZ} min={-180} max={180} step={1} onChange={(rotZ) => onChange({ rotZ })} defaultValue={DEFAULT_CONFIG.rotZ} format={deg} />
         <ToggleField label="Drag to rotate (360°)" value={cfg.interactive} onChange={(interactive) => onChange({ interactive })} />
-        <SliderField label="Drag glide" value={cfg.inertia} min={0.01} max={0.6} step={0.01} onChange={(inertia) => onChange({ inertia })} format={(v) => v.toFixed(2)} />
+        <SliderField label="Drag glide" value={cfg.inertia} min={0.01} max={0.6} step={0.01} onChange={(inertia) => onChange({ inertia })} defaultValue={DEFAULT_CONFIG.inertia} format={(v) => v.toFixed(2)} />
         <ToggleField label="Scroll to zoom" value={cfg.wheelZoom} onChange={(wheelZoom) => onChange({ wheelZoom })} />
-        <SliderField label="Zoom" value={cfg.zoom} min={0.3} max={2} step={0.01} onChange={(zoom) => onChange({ zoom })} format={(v) => `${v.toFixed(2)}×`} />
-        <SliderField label="Perspective" value={cfg.perspective} min={0} max={1.1} step={0.01} onChange={(perspective) => onChange({ perspective })} format={pct} />
-        <SliderField label="Offset X" value={cfg.offsetX} min={-0.5} max={0.5} step={0.01} onChange={(offsetX) => onChange({ offsetX })} format={pct} />
-        <SliderField label="Offset Y" value={cfg.offsetY} min={-0.5} max={0.5} step={0.01} onChange={(offsetY) => onChange({ offsetY })} format={pct} />
+        <SliderField label="Zoom" value={cfg.zoom} min={0.3} max={2} step={0.01} onChange={(zoom) => onChange({ zoom })} defaultValue={DEFAULT_CONFIG.zoom} format={(v) => `${v.toFixed(2)}×`} />
+        <SliderField label="Perspective" value={cfg.perspective} min={0} max={1.1} step={0.01} onChange={(perspective) => onChange({ perspective })} defaultValue={DEFAULT_CONFIG.perspective} format={pct} />
+        <SliderField label="Offset X" value={cfg.offsetX} min={-0.5} max={0.5} step={0.01} onChange={(offsetX) => onChange({ offsetX })} defaultValue={DEFAULT_CONFIG.offsetX} format={pct} />
+        <SliderField label="Offset Y" value={cfg.offsetY} min={-0.5} max={0.5} step={0.01} onChange={(offsetY) => onChange({ offsetY })} defaultValue={DEFAULT_CONFIG.offsetY} format={pct} />
       </Section>
 
       <Section title="Effects">
-        <SliderField label="Wave amplitude" value={cfg.waveAmp} min={0} max={0.3} step={0.005} onChange={(waveAmp) => onChange({ waveAmp })} format={(v) => v.toFixed(3)} />
-        <SliderField label="Wave frequency" value={cfg.waveFreq} min={1} max={30} step={0.5} onChange={(waveFreq) => onChange({ waveFreq })} />
-        <SliderField label="Wave speed" value={cfg.waveSpeed} min={0} max={8} step={0.1} onChange={(waveSpeed) => onChange({ waveSpeed })} />
-        <SliderField label="Glyph shimmer" value={cfg.shimmer} min={0} max={0.6} step={0.01} onChange={(shimmer) => onChange({ shimmer })} format={pct} />
-        <SliderField label="Scanline glow" value={cfg.scanStrength} min={0} max={1} step={0.01} onChange={(scanStrength) => onChange({ scanStrength })} format={pct} />
-        <SliderField label="Scanline speed" value={cfg.scanSpeed} min={0.05} max={1.5} step={0.01} onChange={(scanSpeed) => onChange({ scanSpeed })} format={(v) => v.toFixed(2)} />
-        <SliderField label="Intro dissolve" value={cfg.intro} min={0} max={4} step={0.1} onChange={(intro) => onChange({ intro })} format={(v) => (v === 0 ? 'off' : `${v.toFixed(1)}s`)} />
+        <SliderField label="Wave amplitude" value={cfg.waveAmp} min={0} max={0.3} step={0.005} onChange={(waveAmp) => onChange({ waveAmp })} defaultValue={DEFAULT_CONFIG.waveAmp} format={(v) => v.toFixed(3)} />
+        <SliderField label="Wave frequency" value={cfg.waveFreq} min={1} max={30} step={0.5} onChange={(waveFreq) => onChange({ waveFreq })} defaultValue={DEFAULT_CONFIG.waveFreq} />
+        <SliderField label="Wave speed" value={cfg.waveSpeed} min={0} max={8} step={0.1} onChange={(waveSpeed) => onChange({ waveSpeed })} defaultValue={DEFAULT_CONFIG.waveSpeed} />
+        <SliderField label="Glyph shimmer" value={cfg.shimmer} min={0} max={0.6} step={0.01} onChange={(shimmer) => onChange({ shimmer })} defaultValue={DEFAULT_CONFIG.shimmer} format={pct} />
+        <SliderField label="Scanline glow" value={cfg.scanStrength} min={0} max={1} step={0.01} onChange={(scanStrength) => onChange({ scanStrength })} defaultValue={DEFAULT_CONFIG.scanStrength} format={pct} />
+        <SliderField label="Scanline speed" value={cfg.scanSpeed} min={0.05} max={1.5} step={0.01} onChange={(scanSpeed) => onChange({ scanSpeed })} defaultValue={DEFAULT_CONFIG.scanSpeed} format={(v) => v.toFixed(2)} />
+        <SliderField label="Intro dissolve" value={cfg.intro} min={0} max={4} step={0.1} onChange={(intro) => onChange({ intro })} defaultValue={DEFAULT_CONFIG.intro} format={(v) => (v === 0 ? 'off' : `${v.toFixed(1)}s`)} />
       </Section>
 
       <Section title="Background grid">
@@ -320,7 +348,7 @@ export function StudioPanel({
           <>
             <TextField label="Grid glyph" value={cfg.gridChar} onChange={(gridChar) => onChange({ gridChar: Array.from(gridChar)[0] ?? '' })} />
             <ColorField label="Grid color" value={cfg.gridColor} onChange={(gridColor) => onChange({ gridColor })} />
-            <SliderField label="Grid opacity" value={cfg.gridOpacity} min={0.01} max={0.6} step={0.01} onChange={(gridOpacity) => onChange({ gridOpacity })} format={pct} />
+            <SliderField label="Grid opacity" value={cfg.gridOpacity} min={0.01} max={0.6} step={0.01} onChange={(gridOpacity) => onChange({ gridOpacity })} defaultValue={DEFAULT_CONFIG.gridOpacity} format={pct} />
           </>
         )}
       </Section>
@@ -328,15 +356,21 @@ export function StudioPanel({
       <Section title="Export" defaultOpen>
         <div className="grid grid-cols-3 gap-2">
           {[
-            { label: copied === 'code' ? 'Copied' : 'Code', action: onCopyCode },
-            { label: copied === 'json' ? 'Copied' : 'JSON', action: onCopyJson },
-            { label: 'PNG', action: onDownloadPng },
+            { key: 'code', label: copied === 'code' ? 'Copied' : 'Code', action: onCopyCode },
+            { key: 'json', label: copied === 'json' ? 'Copied' : 'JSON', action: onCopyJson },
+            { key: 'png', label: 'PNG', action: onDownloadPng },
+            { key: 'video', label: recording ? 'Recording…' : 'Video', action: onRecord, disabled: recording },
+            { key: 'image', label: copied === 'image' ? 'Copied' : 'Copy PNG', action: onCopyImage },
+            { key: 'text', label: copied === 'text' ? 'Copied' : 'Copy text', action: onCopyText },
+            { key: 'share', label: copied === 'share' ? 'Copied' : 'Share link', action: onShare, full: true },
           ].map((b) => (
             <button
-              key={b.label}
+              key={b.key}
               type="button"
               onClick={b.action}
-              className="h-9 border border-border text-[11px] tracking-widest uppercase transition-colors hover:border-foreground hover:bg-foreground hover:text-background focus-visible:outline focus-visible:outline-1 focus-visible:outline-dashed focus-visible:outline-offset-2"
+              disabled={b.disabled}
+              data-full={b.full || undefined}
+              className="h-9 border border-border text-[11px] tracking-widest uppercase transition-colors hover:border-foreground hover:bg-foreground hover:text-background focus-visible:outline focus-visible:outline-1 focus-visible:outline-dashed focus-visible:outline-offset-2 disabled:pointer-events-none disabled:opacity-60 data-full:col-span-3"
             >
               {b.label}
             </button>

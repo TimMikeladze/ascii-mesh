@@ -57,8 +57,26 @@ export class AsciiRenderer {
   private charsKey = ''
   private chars: string[] = []
 
+  private last = { cols: 0, rows: 0, vis: 0 }
+
   invalidate() {
     this.gridKey = ''
+  }
+
+  /** The last rendered frame as plain text, trimmed to the glyphs' bounding box. */
+  toText(): string {
+    const { cols, rows, vis } = this.last
+    if (!vis) return ''
+    const grid = Array.from({ length: rows }, () => new Array<string>(cols).fill(' '))
+    for (let i = 0; i < vis; i++) {
+      const id = this.visCell[i]
+      grid[(id / cols) | 0][id % cols] = this.chars[this.visChar[i]] ?? ' '
+    }
+    const lines = grid.map((r) => r.join('').replace(/\s+$/, ''))
+    while (lines.length && !lines[0].trim()) lines.shift()
+    while (lines.length && !lines[lines.length - 1].trim()) lines.pop()
+    const indent = Math.min(...lines.filter((l) => l.trim()).map((l) => l.length - l.trimStart().length))
+    return lines.map((l) => l.slice(indent)).join('\n')
   }
 
   render(
@@ -332,6 +350,7 @@ export class AsciiRenderer {
       ctx.fillText(chars[this.visChar[i]], padX + c * cw + cw / 2, padY + r * ch + ch / 2)
     }
 
+    this.last = { cols, rows, vis }
     return { cols, rows, points: count, glyphs: vis }
   }
 }

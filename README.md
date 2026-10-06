@@ -37,4 +37,15 @@ import { AsciiMesh } from '@/components/ascii-mesh'
 />
 ```
 
-`source` is a URL or `{ kind: 'text', text, fontKey, weight }`. Drag rotates 360°, pinch zooms on touch, `wheelZoom` enables scroll zoom, double-click resets. All config keys live in `lib/ascii/config.ts`; the studio's "Copy code" button emits only the keys you changed.
+`source` is a URL or `{ kind: 'text', text, fontKey, weight }`. Drag rotates 360°, pinch zooms on touch and trackpad, arrow keys rotate the focused canvas (`+`/`-` zoom, `0` resets), `wheelZoom` enables scroll zoom, double-click resets. All config keys live in `lib/ascii/config.ts`; the studio's "Copy code" button emits only the keys you changed.
+
+## Studio extras
+
+- **Share link** (Export → Share link, or `s`) encodes the config and preset/text source in the URL hash. Uploaded files aren't included.
+- **Copy text** (Export → Copy text, or `t`) copies the current frame as plain-text ASCII. `AsciiMeshHandle.getText()` exposes the same for your own code.
+- **Video** (Export → Video) records a 5-second WebM of the canvas.
+- **Paste** an image or image URL anywhere, or drag an image in from another tab, to convert it.
+- **Shortcuts:** `space` pause · `r` replay · `u` upload · `x` randomize look · `c` copy code · `s` share · `t` copy text · `f` fullscreen · `⌘Z`/`⇧⌘Z` undo/redo · `?` help.
+- **Copy PNG** puts the current frame on the clipboard. Downloads are named after the source (`logo.svg` → `logo-ascii.png`).
+- **Sliders:** double-click to reset to default, click the number to type a value; a dot marks changed values.
+- **Session** is saved to `localStorage` and restored on reload (a share link in the URL wins).

@@ -1,6 +1,6 @@
 'use client'
 
-import { useId } from 'react'
+import { useEffect, useId, useRef, useState } from 'react'
 import type { ReactNode } from 'react'
 import { ChevronRight } from 'lucide-react'
 import { cn } from '@/lib/utils'
@@ -14,8 +14,26 @@ export function Section({
   defaultOpen?: boolean
   children: ReactNode
 }) {
+  // Remember which sections the user opened or closed across visits.
+  const ref = useRef<HTMLDetailsElement>(null)
+  const storageKey = `ascii-mesh:section:${title}`
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem(storageKey)
+      if (saved !== null && ref.current) ref.current.open = saved === '1'
+    } catch {}
+  }, [storageKey])
   return (
-    <details open={defaultOpen} className="group border-b border-dashed border-border">
+    <details
+      ref={ref}
+      open={defaultOpen}
+      onToggle={(e) => {
+        try {
+          localStorage.setItem(storageKey, e.currentTarget.open ? '1' : '0')
+        } catch {}
+      }}
+      className="group border-b border-dashed border-border"
+    >
       <summary className="flex cursor-pointer items-center justify-between px-5 py-3.5 text-xs font-medium tracking-widest text-foreground uppercase select-none hover:bg-accent/40">
         {title}
         <ChevronRight className="size-3.5 text-muted-foreground transition-transform group-open:rotate-90" aria-hidden />
@@ -44,6 +62,7 @@ export function SliderField({
   step = 1,
   onChange,
   format,
+  defaultValue,
 }: {
   label: string
   value: number
@@ -52,13 +71,52 @@ export function SliderField({
   step?: number
   onChange: (v: number) => void
   format?: (v: number) => string
+  /** Double-clicking the slider restores this value; a dot marks when it differs. */
+  defaultValue?: number
 }) {
   const id = useId()
+  const [editing, setEditing] = useState(false)
+  const modified = defaultValue !== undefined && value !== defaultValue
+  const display = format ? format(value) : String(Number(value.toFixed(3)))
+  const commitDraft = (raw: string) => {
+    setEditing(false)
+    const n = Number.parseFloat(raw)
+    if (Number.isFinite(n)) onChange(Math.min(max, Math.max(min, n)))
+  }
   return (
     <div className="flex flex-col gap-1.5">
-      <Label id={id} value={format ? format(value) : String(Number(value.toFixed(3)))}>
-        {label}
-      </Label>
+      <div className="flex items-baseline justify-between gap-3 text-xs">
+        <label htmlFor={id} className="flex items-center gap-1.5 text-muted-foreground">
+          {label}
+          {modified && <span aria-label="modified" title="Changed from default — double-click the slider to reset" className="size-1 rounded-full bg-foreground" />}
+        </label>
+        {editing ? (
+          <input
+            autoFocus
+            type="number"
+            aria-label={`${label} value`}
+            defaultValue={Number(value.toFixed(3))}
+            min={min}
+            max={max}
+            step={step}
+            onBlur={(e) => commitDraft(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') commitDraft(e.currentTarget.value)
+              else if (e.key === 'Escape') setEditing(false)
+            }}
+            className="h-5 w-20 border border-border bg-background px-1 text-right text-xs tabular-nums text-foreground"
+          />
+        ) : (
+          <button
+            type="button"
+            onClick={() => setEditing(true)}
+            title="Click to type a value"
+            className="tabular-nums text-foreground hover:underline hover:decoration-dashed focus-visible:outline focus-visible:outline-1 focus-visible:outline-dashed"
+          >
+            {display}
+          </button>
+        )}
+      </div>
       <input
         id={id}
         type="range"
@@ -68,6 +126,7 @@ export function SliderField({
         step={step}
         value={value}
         onChange={(e) => onChange(Number(e.target.value))}
+        onDoubleClick={() => defaultValue !== undefined && onChange(defaultValue)}
       />
     </div>
   )

@@ -1,0 +1,29 @@
+# Studio UX pass
+
+- **Share links** — `#s=<base64url JSON>` with config diff + preset/text source. Restored on load. Uploads stay local, so they're dropped from links.
+- **Keyboard** — space pause, r replay, u upload, c copy code, s share. Ignored while typing or with modifiers.
+- **Paste** — paste an image file or `https://` image URL anywhere to convert it.
+- **Video export** — Export → Video records 5s of the canvas via `MediaRecorder` (WebM, MP4 fallback).
+- **Undo/redo** — ⌘Z / ⇧⌘Z (⌘Y). Edits within 500ms coalesce (slider drags = one step). History capped at 100.
+- **Randomize** — `x` picks a look, charset, colour mode, light and motion. Undoable.
+- **Session restore** — state saved to `localStorage` (`ascii-mesh:session`), same encoding as share links. Saving waits for restore so defaults never overwrite it.
+- **Help** — `?` toggles a shortcuts overlay; Esc closes.
+- **Fullscreen** — `f` toggles fullscreen on the canvas.
+- **Copy PNG** — Export → Copy PNG writes the frame via `ClipboardItem`.
+- **File names** — exports use a slug of the source name + `-ascii`.
+- **OG image** — `app/opengraph-image.tsx` renders an ASCII starburst card; `metadataBase` from `VERCEL_PROJECT_PRODUCTION_URL`.
+- **Marks** — added Heart, Hexagon, Star built-in sources.
+- **Look chips** — the preset matching current config shows as active.
+- **Code export** — preset sources emit `/logo.svg` with a comment instead of a non-existent `/starburst.svg`; uploads note to put the file in `/public`.
+- **Errors** — URL load failures explain CORS and suggest uploading; files over 25 MB are rejected up front.
+- **Canvas a11y** — canvas is focusable when interactive; arrows rotate (shift ×3), `+`/`-` zoom, `0` resets. Cursor switches to `grabbing` mid-drag.
+- **Trackpad pinch** — ctrl+wheel zooms even with `wheelZoom` off (stops page zoom).
+- **Header** — added Share; "Copy code" shortened to "Code" so six actions fit the 22rem column.
+- **Sliders** — dot marks values changed from default; double-click slider resets; click the value to type an exact number (clamped, Enter/blur commits, Esc cancels).
+- **Sections** — open/closed state persisted per section in `localStorage`.
+- **Reduced motion** — `AsciiMesh` reacts live to `prefers-reduced-motion` changes.
+- **Copy text** — `AsciiRenderer.toText()` rebuilds the last frame's glyph grid, trimmed to its bounding box; exposed as `AsciiMeshHandle.getText()`, Export → Copy text, `t`.
+- **Reverse ramp / Swap colors** — one-click helpers under the charset field and the colour pair.
+- **Drop** — images dragged from another tab (URL / data URI) convert like files; drag overlay no longer flickers over child elements.
+- **Mobile hint** — shortened touch hint so it no longer overlaps the stats.
+- **Blob URLs** — previous upload's object URL is revoked on replace/failure.

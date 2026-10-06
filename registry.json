@@ -38,7 +38,7 @@
       "name": "ascii-studio",
       "type": "registry:block",
       "title": "ASCII Studio",
-      "description": "Full editor for ASCII Mesh: sources, looks, ~70 controls, code/JSON/PNG export.",
+      "description": "Full editor for ASCII Mesh: sources, looks, ~70 controls, undo/redo, share links, code/JSON/PNG/text/video export.",
       "dependencies": [
         "lucide-react",
         "swr"
