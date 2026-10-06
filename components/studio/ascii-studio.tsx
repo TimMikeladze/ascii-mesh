@@ -10,7 +10,7 @@ import { StudioPanel } from './studio-panel'
 import type { SourceState } from './types'
 
 const NAV_BUTTON =
-  'flex h-full items-center gap-1.5 px-3 text-xs max-sm:px-3.5 tracking-widest uppercase text-foreground/90 transition-colors hover:bg-foreground hover:text-background focus-visible:outline focus-visible:outline-1 focus-visible:outline-dashed focus-visible:-outline-offset-4 whitespace-nowrap'
+  'flex h-full items-center gap-1.5 px-3 text-xs lg:px-0 lg:hover:bg-transparent lg:hover:text-muted-foreground max-sm:px-3.5 tracking-widest uppercase text-foreground/90 transition-colors hover:bg-foreground hover:text-background focus-visible:outline focus-visible:outline-1 focus-visible:outline-dashed focus-visible:-outline-offset-4 whitespace-nowrap'
 
 function buildCode(cfg: AsciiConfig, source: SourceState): string {
   const diff = diffFromDefaults(cfg)
@@ -120,17 +120,14 @@ export function AsciiStudio() {
 
   return (
     <div className="flex min-h-dvh flex-col lg:h-dvh lg:overflow-hidden">
-      <header className="flex h-14 shrink-0 items-stretch border-b border-dashed border-border">
-        <div className="flex items-center gap-2 border-r border-dashed border-border px-4 sm:px-5">
-          <span aria-hidden className="text-sm leading-none">
-            ▲
-          </span>
+      <header className="flex h-14 shrink-0 items-stretch border-b border-dashed border-border lg:grid lg:grid-cols-[auto_minmax(0,1fr)_22rem]">
+        <div className="flex items-center border-r border-dashed border-border px-4 sm:px-5">
           <h1 className="text-sm font-medium tracking-wide">ascii/mesh</h1>
         </div>
-        <p className="hidden flex-1 items-center px-5 text-xs text-muted-foreground xl:flex">
+        <p className="hidden flex-1 items-center truncate px-5 text-xs text-muted-foreground xl:flex">
           Turn any image, SVG or logo into a rotatable 3D ASCII animation.
         </p>
-        <nav aria-label="Studio actions" className="ml-auto flex items-stretch overflow-x-auto xl:border-l border-dashed border-border">
+        <nav aria-label="Studio actions" className="ml-auto flex items-stretch overflow-x-auto border-dashed border-border lg:col-start-3 lg:ml-0 lg:justify-between lg:border-l lg:px-5">
           <input
             ref={fileRef}
             type="file"
