@@ -176,7 +176,7 @@ export function AsciiStudio() {
         </nav>
       </header>
 
-      <div className="grid min-h-0 flex-1 grid-cols-1 lg:grid-cols-[minmax(0,1fr)_22rem]">
+      <div className="grid min-h-0 flex-1 grid-cols-1 lg:grid-cols-[minmax(0,1fr)_22rem] lg:grid-rows-[minmax(0,1fr)]">
         <main
           className="relative h-[68dvh] min-h-[420px] border-b border-dashed border-border lg:h-auto lg:border-r lg:border-b-0"
           onDragOver={(e) => {

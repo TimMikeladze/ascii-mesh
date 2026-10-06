@@ -193,3 +193,13 @@
     display: none;
   }
 }
+
+/* Desktop studio is a fixed app shell: only the panel scrolls, never the page. */
+@media (min-width: 1024px) {
+  html,
+  body {
+    height: 100%;
+    overflow: hidden;
+    overscroll-behavior: none;
+  }
+}
