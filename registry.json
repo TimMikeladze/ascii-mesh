@@ -1,0 +1,93 @@
+{
+  "$schema": "https://ui.shadcn.com/schema/registry.json",
+  "name": "ascii-mesh",
+  "homepage": "https://ascii-mesh.vercel.app",
+  "items": [
+    {
+      "name": "ascii-mesh",
+      "type": "registry:component",
+      "title": "ASCII Mesh",
+      "description": "Turn any image, SVG, logo or text into a rotatable, animated 3D ASCII render.",
+      "dependencies": [
+        "swr"
+      ],
+      "files": [
+        {
+          "path": "components/ascii-mesh.tsx",
+          "type": "registry:component"
+        },
+        {
+          "path": "lib/ascii/config.ts",
+          "type": "registry:lib"
+        },
+        {
+          "path": "lib/ascii/model.ts",
+          "type": "registry:lib"
+        },
+        {
+          "path": "lib/ascii/renderer.ts",
+          "type": "registry:lib"
+        },
+        {
+          "path": "lib/ascii/source.ts",
+          "type": "registry:lib"
+        }
+      ]
+    },
+    {
+      "name": "ascii-studio",
+      "type": "registry:block",
+      "title": "ASCII Studio",
+      "description": "Full editor for ASCII Mesh: sources, looks, ~70 controls, code/JSON/PNG export.",
+      "dependencies": [
+        "lucide-react",
+        "swr"
+      ],
+      "registryDependencies": [
+        "utils"
+      ],
+      "files": [
+        {
+          "path": "components/ascii-mesh.tsx",
+          "type": "registry:component"
+        },
+        {
+          "path": "lib/ascii/config.ts",
+          "type": "registry:lib"
+        },
+        {
+          "path": "lib/ascii/model.ts",
+          "type": "registry:lib"
+        },
+        {
+          "path": "lib/ascii/renderer.ts",
+          "type": "registry:lib"
+        },
+        {
+          "path": "lib/ascii/source.ts",
+          "type": "registry:lib"
+        },
+        {
+          "path": "components/studio/ascii-studio.tsx",
+          "type": "registry:component"
+        },
+        {
+          "path": "components/studio/studio-panel.tsx",
+          "type": "registry:component"
+        },
+        {
+          "path": "components/studio/controls.tsx",
+          "type": "registry:component"
+        },
+        {
+          "path": "components/studio/types.ts",
+          "type": "registry:component"
+        },
+        {
+          "path": "lib/ascii/presets.ts",
+          "type": "registry:lib"
+        }
+      ]
+    }
+  ]
+}
