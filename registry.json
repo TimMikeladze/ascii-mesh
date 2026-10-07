@@ -45,7 +45,8 @@
       "description": "Full editor for ASCII Mesh: sources, looks, ~70 controls, a 3D modeller (shapes, sculpt, paint, OBJ/STL import), undo/redo, share links, code/JSON/PNG/text/video/PLY export.",
       "dependencies": [
         "lucide-react",
-        "swr"
+        "swr",
+        "use-fs"
       ],
       "registryDependencies": [
         "utils"
@@ -98,6 +99,22 @@
         {
           "path": "lib/ascii/presets.ts",
           "type": "registry:lib"
+        },
+        {
+          "path": "lib/ascii/piece.ts",
+          "type": "registry:lib"
+        },
+        {
+          "path": "lib/fs/handles.ts",
+          "type": "registry:lib"
+        },
+        {
+          "path": "components/studio/folder.tsx",
+          "type": "registry:component"
+        },
+        {
+          "path": "components/studio/folder-panel.tsx",
+          "type": "registry:component"
         }
       ]
     }

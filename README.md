@@ -62,6 +62,21 @@ import scene from './scene.json'
 
 How it works: every shape and sculpt dab is a signed distance function; the scene samples each shape's surface, keeps samples on the blended surface and projects them onto it (`lib/ascii/scene.ts`). Strokes and shape tweaks only resample the region that changed. Details in `docs/mesh-editor.md`.
 
+## Build with an agent (folder mode)
+
+The studio can hold a folder on disk (Folder → **Open folder**, desktop Chrome / Edge, via [`use-fs`](https://use-fs.com)). Every `*.ascii.json` file in it is a *piece* — source + config as plain JSON:
+
+```json
+{ "v": 1, "source": { "kind": "text", "text": "HI" }, "config": { "charset": " .:-=+*#%@", "colorMode": "mono" } }
+```
+
+- An agent (Claude Code, etc.) writes or edits pieces; the studio renders the active one live (a new piece opens automatically).
+- Your slider tweaks save back to the same file; uploads are copied into the folder so the piece can reference them (`{ "kind": "image", "path": "logo.svg" }`).
+- After each change the rendered frame is written next to the piece as `<name>.frame.txt`, so the agent can read what it made and iterate.
+- The folder is remembered; after a browser restart click **Reconnect**.
+
+The `ascii-studio` skill (`skills/ascii-studio/SKILL.md`) teaches agents the format, every config key and scene modelling. `pnpm install` mirrors `skills/` into `.claude/skills/` and `.agents/skills/` (or run `pnpm skills:sync`). Details: `docs/studio-folder.md`.
+
 ## Studio extras
 
 - **Share link** (Export → Share link, or `s`) encodes the config and preset/text source in the URL hash. Uploaded files aren't included.

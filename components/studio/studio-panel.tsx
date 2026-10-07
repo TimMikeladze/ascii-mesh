@@ -47,6 +47,8 @@ interface StudioPanelProps {
   copied: string | null
   /** Rendered as the "Model" section while the scene source is active. */
   modelPanel?: ReactNode
+  /** Rendered as the "Folder" section when the browser can hold a folder. */
+  folderPanel?: ReactNode
 }
 
 const fontOptions = FONT_OPTIONS.map((f) => ({ value: f.key, label: f.label }))
@@ -71,6 +73,7 @@ export function StudioPanel({
   onShare,
   copied,
   modelPanel,
+  folderPanel,
 }: StudioPanelProps) {
   const fileRef = useRef<HTMLInputElement>(null)
   const [urlDraft, setUrlDraft] = useState('')
@@ -79,6 +82,8 @@ export function StudioPanel({
 
   return (
     <div className="flex flex-col">
+      {folderPanel && <Section title="Folder">{folderPanel}</Section>}
+
       <Section title="Source" defaultOpen>
         <ChipRow
           label="Built-in marks"

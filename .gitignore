@@ -19,3 +19,7 @@ node_modules
 public/r/
 .sgx/
 *.tsbuildinfo
+
+# mirrored from skills/ by scripts/setup-skills.mjs
+/.claude/skills/
+/.agents/

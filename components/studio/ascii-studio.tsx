@@ -21,8 +21,11 @@ import {
   type MeshScene,
   type Vec3,
 } from '@/lib/ascii/scene'
+import { FRAME_SUFFIX, nextPiecePath, parsePiece, pieceStem, relativeTo, resolveRelative, serializePiece, type Piece, type PieceSource } from '@/lib/ascii/piece'
 import { loadSource, type SourceSpec } from '@/lib/ascii/source'
 import { cn } from '@/lib/utils'
+import { useStudioFolder } from './folder'
+import { FolderPanel } from './folder-panel'
 import { ModelPanel, TOOLS } from './model-panel'
 import { StudioPanel } from './studio-panel'
 import type { BrushSettings, SceneTool, SourceState } from './types'
@@ -658,6 +661,222 @@ export function AsciiStudio() {
     return () => window.removeEventListener('keydown', onKey)
   }, [code, copy, share, undo, redo, commit, commitScene, toggleFullscreen, copyText, source.kind, selected, pickTool])
 
+  // ---- Folder (docs/studio-folder.md) ----
+  // `diskRef` is the active piece's text as last read from or written to disk, so our own writes
+  // aren't mistaken for an agent's edit. `savedRef` is the normalised form of the state that text
+  // describes; state serialising to the same thing needs no write (keeps hand formatting intact).
+  const folder = useStudioFolder()
+  const [activePiece, setActivePiece] = useState<string | null>(null)
+  const diskRef = useRef<string | null>(null)
+  const savedRef = useRef<string | null>(null)
+  const pieceErrorRef = useRef<string | null>(null)
+  const applyingRef = useRef(false)
+  const imageTextRef = useRef<string | undefined>(undefined)
+  const folderFilesRef = useRef(folder.files)
+  folderFilesRef.current = folder.files
+  const { readFile: readFolderFile, write: writeFolder, root: folderRoot } = folder
+
+  const pieceFromState = useCallback(
+    (path: string): Piece | null => {
+      let src: PieceSource
+      if (source.kind === 'scene') src = { kind: 'scene', scene }
+      else if (source.kind === 'upload') {
+        if (!source.path) return null
+        src = { kind: 'image', path: relativeTo(path, source.path) }
+      } else src = source
+      return { source: src, config: cfg }
+    },
+    [source, scene, cfg],
+  )
+
+  const applyPiece = useCallback(
+    async (path: string, text: string, first: boolean) => {
+      diskRef.current = text
+      const parsed = parsePiece(text)
+      applyingRef.current = true
+      try {
+        if ('error' in parsed) {
+          if (pieceErrorRef.current !== text) flash(`${path}: ${parsed.error}`)
+          pieceErrorRef.current = text
+          return
+        }
+        pieceErrorRef.current = null
+        const { piece } = parsed
+        let next: SourceState
+        if (piece.source.kind === 'image') {
+          const target = resolveRelative(path, piece.source.path)
+          imageTextRef.current = target ? folderFilesRef.current.get(target) : undefined
+        const file = target ? await readFolderFile(target) : null
+          if (!file || !target) {
+            flash(`${path}: image "${piece.source.path}" not found in the folder`)
+            return
+          }
+          const url = URL.createObjectURL(file)
+          if (uploadUrlRef.current) URL.revokeObjectURL(uploadUrlRef.current)
+          uploadUrlRef.current = url
+          next = { kind: 'upload', url, name: file.name, path: target }
+        } else if (piece.source.kind === 'scene') next = { kind: 'scene' }
+        else next = piece.source
+        savedRef.current = serializePiece(piece)
+        // One undo step for config + scene together.
+        pushHistory(false)
+        cfgRef.current = piece.config
+        setCfg(piece.config)
+        if (piece.source.kind === 'scene') {
+          sceneRef.current = piece.source.scene
+          setScene(piece.source.scene)
+        }
+        setSource(next)
+        if (next.kind !== 'scene') setTool('orbit')
+        if (first) setReplayKey((k) => k + 1)
+      } finally {
+        applyingRef.current = false
+      }
+    },
+    [readFolderFile, flash, pushHistory],
+  )
+
+  const openPiece = useCallback(
+    (path: string) => {
+      const text = folder.files.get(path)
+      if (text === undefined) return
+      setActivePiece(path)
+      void applyPiece(path, text, true)
+    },
+    [folder.files, applyPiece],
+  )
+
+  // Agent edits to the active piece (or the image it points at) reload live; a piece that
+  // disappears, or a folder that is closed, is let go.
+  useEffect(() => {
+    if (!activePiece) return
+    if (!folder.root) {
+      if (!folder.pending) setActivePiece(null)
+      return
+    }
+    const text = folder.files.get(activePiece)
+    if (text === undefined) {
+      setActivePiece(null)
+      return
+    }
+    const imagePath = source.kind === 'upload' ? source.path : undefined
+    const image = imagePath ? folder.files.get(imagePath) : undefined
+    // Only a change to an image the scan has seen counts; a just-copied file may not be seen yet.
+    const imageChanged = image !== undefined && image !== imageTextRef.current
+    if (image !== undefined) imageTextRef.current = image
+    if (text !== diskRef.current || imageChanged) void applyPiece(activePiece, text, false)
+  }, [folder.files, folder.root, folder.pending, activePiece, source, applyPiece])
+
+  // Remember the open piece across reloads.
+  const ACTIVE_KEY = 'ascii-mesh:piece'
+  const wantedRef = useRef<string | null>(null)
+  useEffect(() => {
+    try {
+      wantedRef.current = localStorage.getItem(ACTIVE_KEY)
+    } catch {}
+  }, [])
+  useEffect(() => {
+    if (!activePiece) return
+    try {
+      localStorage.setItem(ACTIVE_KEY, activePiece)
+    } catch {}
+  }, [activePiece])
+
+  // A piece appearing on disk while none is open is opened ("show me what you made"). Pieces
+  // seen during the first scans after a folder is held are the folder's existing contents.
+  const knownPiecesRef = useRef<Set<string> | null>(null)
+  const heldAtRef = useRef(0)
+  useEffect(() => {
+    if (!folder.root) {
+      knownPiecesRef.current = null
+      return
+    }
+    if (!knownPiecesRef.current) heldAtRef.current = Date.now()
+    const known = knownPiecesRef.current ?? new Set<string>()
+    knownPiecesRef.current = new Set(folder.pieces)
+    if (activePiece) return
+    const wanted = wantedRef.current
+    if (wanted && folder.pieces.includes(wanted)) {
+      wantedRef.current = null
+      openPiece(wanted)
+      return
+    }
+    if (Date.now() - heldAtRef.current < 2000) return
+    const fresh = folder.pieces.find((p) => !known.has(p))
+    if (fresh) openPiece(fresh)
+  }, [folder.root, folder.pieces, activePiece, openPiece])
+
+  // Studio edits save back to the active piece (debounced). An upload is first copied into the
+  // folder so the piece can reference it by path.
+  useEffect(() => {
+    if (!activePiece || !folderRoot) return
+    const t = window.setTimeout(async () => {
+      if (applyingRef.current) return
+      try {
+        if (source.kind === 'upload' && !source.path) {
+          const blob = await (await fetch(source.url)).blob()
+          const dir = activePiece.includes('/') ? activePiece.slice(0, activePiece.lastIndexOf('/') + 1) : ''
+          const safe = source.name.replace(/[^\w.-]+/g, '-') || 'image'
+          const dot = safe.lastIndexOf('.')
+          const [stem, ext] = dot > 0 ? [safe.slice(0, dot), safe.slice(dot)] : [safe, '']
+          let target = `${dir}${safe}`
+          // Never overwrite an image another piece may use.
+          for (let i = 2; folder.files.has(target); i++) target = `${dir}${stem}-${i}${ext}`
+          await writeFolder(target, blob)
+          // Record what the watcher will see, and save the piece in the same step, so the scan
+          // that picks up the copy doesn't reload the piece's previous image.
+          imageTextRef.current = await blob.text()
+          const next = { ...source, path: target }
+          const text = serializePiece({ source: { kind: 'image', path: relativeTo(activePiece, target) }, config: cfg })
+          savedRef.current = text
+          diskRef.current = text
+          await writeFolder(activePiece, text)
+          setSource(next)
+          return
+        }
+        const piece = pieceFromState(activePiece)
+        if (!piece) return
+        const text = serializePiece(piece)
+        if (text === savedRef.current) return
+        savedRef.current = text
+        diskRef.current = text
+        await writeFolder(activePiece, text)
+      } catch {
+        flash(`Could not save ${activePiece}`)
+      }
+    }, 600)
+    return () => window.clearTimeout(t)
+  }, [activePiece, folderRoot, folder.files, writeFolder, source, cfg, pieceFromState, flash])
+
+  // The rendered frame goes next to the piece as text, so an agent can read what it made.
+  const frameTextRef = useRef<string | null>(null)
+  useEffect(() => {
+    if (!activePiece || !folderRoot) return
+    const t = window.setTimeout(() => {
+      const text = meshRef.current?.getText()
+      if (!text || text === frameTextRef.current) return
+      frameTextRef.current = text
+      writeFolder(`${pieceStem(activePiece)}${FRAME_SUFFIX}`, `${text}\n`).catch(() => undefined)
+    }, 1500)
+    return () => window.clearTimeout(t)
+  }, [activePiece, folderRoot, writeFolder, cfg, scene, source, stats?.points])
+
+  const newPiece = useCallback(async () => {
+    const path = nextPiecePath(folder.pieces)
+    const piece = pieceFromState(path)
+    // Uploads without a path are copied in by the save effect once the piece is active.
+    const text = serializePiece(piece ?? { source: { kind: 'preset', key: 'starburst' }, config: cfg })
+    try {
+      await writeFolder(path, text)
+      diskRef.current = text
+      savedRef.current = piece ? text : null
+      setActivePiece(path)
+      flash(`Saved ${path} — edits now save to it`)
+    } catch {
+      flash(`Could not write ${path}`)
+    }
+  }, [folder.pieces, writeFolder, pieceFromState, cfg, flash])
+
   const handleStats = useCallback((s: AsciiMeshStats) => setStats(s), [])
 
   return (
@@ -899,6 +1118,11 @@ export function AsciiStudio() {
             recording={recording}
             onShare={share}
             copied={copied}
+            folderPanel={
+              folder.supported || folder.root ? (
+                <FolderPanel folder={folder} active={activePiece} onOpen={openPiece} onNew={newPiece} />
+              ) : undefined
+            }
             modelPanel={
               <ModelPanel
                 scene={scene}
