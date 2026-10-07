@@ -1,8 +1,13 @@
 import { resolveFontFamily, type FontKey } from './config'
+import type { MeshScene, SerializedScene } from './scene'
 
 export type SourceSpec =
   | { kind: 'url'; url: string; name?: string }
   | { kind: 'text'; text: string; fontKey: FontKey; weight: number }
+  /** A modelled scene: the studio's live `MeshScene` or a saved scene JSON (`SerializedScene`). */
+  | { kind: 'scene'; scene: MeshScene | SerializedScene }
+
+type ImageSpec = Exclude<SourceSpec, { kind: 'scene' }>
 
 export interface LoadedSource {
   image: CanvasImageSource
@@ -12,7 +17,7 @@ export interface LoadedSource {
   isVector: boolean
 }
 
-export function sourceKey(spec: SourceSpec): string {
+export function sourceKey(spec: ImageSpec): string {
   return spec.kind === 'url'
     ? `url:${spec.url}`
     : `text:${spec.fontKey}:${spec.weight}:${spec.text}`
@@ -79,7 +84,7 @@ async function loadText(spec: Extract<SourceSpec, { kind: 'text' }>): Promise<Lo
   }
 }
 
-export async function loadSource(spec: SourceSpec): Promise<LoadedSource> {
+export async function loadSource(spec: ImageSpec): Promise<LoadedSource> {
   if (spec.kind === 'text') return loadText(spec)
   const img = await loadImage(spec.url)
   const width = img.naturalWidth || 512

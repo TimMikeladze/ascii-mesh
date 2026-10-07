@@ -1,7 +1,8 @@
 'use client'
 
 import { useRef, useState } from 'react'
-import { Upload } from 'lucide-react'
+import type { ReactNode } from 'react'
+import { Box, Upload } from 'lucide-react'
 import {
   CHARSETS,
   FONT_OPTIONS,
@@ -44,6 +45,8 @@ interface StudioPanelProps {
   recording: boolean
   onShare: () => void
   copied: string | null
+  /** Rendered as the "Model" section while the scene source is active. */
+  modelPanel?: ReactNode
 }
 
 const fontOptions = FONT_OPTIONS.map((f) => ({ value: f.key, label: f.label }))
@@ -67,6 +70,7 @@ export function StudioPanel({
   recording,
   onShare,
   copied,
+  modelPanel,
 }: StudioPanelProps) {
   const fileRef = useRef<HTMLInputElement>(null)
   const [urlDraft, setUrlDraft] = useState('')
@@ -82,6 +86,20 @@ export function StudioPanel({
           options={presets.map((p) => ({ value: p.key, label: p.label }))}
           onChange={(key) => onSource({ kind: 'preset', key })}
         />
+        <button
+          type="button"
+          aria-pressed={source.kind === 'scene'}
+          onClick={() => onSource(source.kind === 'scene' ? { kind: 'preset', key: presets[0].key } : { kind: 'scene' })}
+          className={
+            'flex h-10 items-center justify-center gap-2 border text-xs tracking-widest uppercase transition-colors focus-visible:outline focus-visible:outline-1 focus-visible:outline-dashed focus-visible:outline-offset-2 ' +
+            (source.kind === 'scene'
+              ? 'border-foreground bg-foreground text-background'
+              : 'border-border text-muted-foreground hover:border-foreground hover:text-foreground')
+          }
+        >
+          <Box className="size-3.5" aria-hidden />
+          {source.kind === 'scene' ? 'Modelling — back to marks' : 'Model, sculpt & paint in 3D'}
+        </button>
         <div className="flex flex-col gap-2">
           <input
             ref={fileRef}
@@ -170,6 +188,12 @@ export function StudioPanel({
         </div>
       </Section>
 
+      {source.kind === 'scene' && modelPanel && (
+        <Section title="Model" defaultOpen>
+          {modelPanel}
+        </Section>
+      )}
+
       <Section title="Look" defaultOpen>
         <ChipRow
           label="Presets"
@@ -182,7 +206,7 @@ export function StudioPanel({
         />
       </Section>
 
-      <Section title="Shape">
+      {source.kind !== 'scene' && <Section title="Shape">
         <Segmented<ShapeMode>
           label="3D mode"
           value={cfg.shape}
@@ -212,7 +236,7 @@ export function StudioPanel({
         <SliderField label="Threshold" value={cfg.threshold} min={0.02} max={0.98} step={0.01} onChange={(threshold) => onChange({ threshold })} defaultValue={DEFAULT_CONFIG.threshold} format={pct} />
         <SliderField label="Edge smoothing" value={cfg.smooth} min={0} max={4} step={1} onChange={(smooth) => onChange({ smooth })} defaultValue={DEFAULT_CONFIG.smooth} />
         <ToggleField label="Invert silhouette" value={cfg.invertMask} onChange={(invertMask) => onChange({ invertMask })} />
-      </Section>
+      </Section>}
 
       <Section title="Characters">
         <ChipRow

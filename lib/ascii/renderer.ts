@@ -58,6 +58,49 @@ export class AsciiRenderer {
   private chars: string[] = []
 
   private last = { cols: 0, rows: 0, vis: 0 }
+  private view = { cw: 1, ch: 1, padX: 0, padY: 0, cols: 0, rows: 0, cx: 0, cy: 0, scale: 1, persp: 0, m: new Float64Array(9) }
+
+  /** Copy of the last frame's cell -> point buffer, for picking against a frozen surface. */
+  snapshotPick(): Int32Array {
+    return this.ibuf.slice()
+  }
+
+  /**
+   * Index of the front-most model point drawn under canvas pixel (x, y), or -1. Searches ±1 cell.
+   * `buf` lets callers pick from a `snapshotPick()` taken earlier with the same view.
+   */
+  pick(x: number, y: number, buf: Int32Array = this.ibuf): number {
+    const { cw, ch, padX, padY, cols, rows } = this.view
+    const c = Math.floor((x - padX) / cw)
+    const r = Math.floor((y - padY) / ch)
+    let best = -1
+    let bestD = Infinity
+    for (let dr = -1; dr <= 1; dr++) {
+      for (let dc = -1; dc <= 1; dc++) {
+        const cc = c + dc
+        const rr = r + dr
+        if (cc < 0 || rr < 0 || cc >= cols || rr >= rows) continue
+        const pi = buf[rr * cols + cc]
+        if (pi < 0) continue
+        const d = dc * dc + dr * dr
+        if (d < bestD) {
+          bestD = d
+          best = pi
+        }
+      }
+    }
+    return best
+  }
+
+  /** Model-space point -> canvas pixel and the pixels-per-unit scale at that depth. */
+  project(x: number, y: number, z: number): { x: number; y: number; scale: number } {
+    const { m, cx, cy, scale, persp } = this.view
+    const rx = m[0] * x + m[1] * y + m[2] * z
+    const ry = m[3] * x + m[4] * y + m[5] * z
+    const rz = m[6] * x + m[7] * y + m[8] * z
+    const s = persp > 0 ? 1 / Math.max(0.25, 1 - persp * rz) : 1
+    return { x: cx + rx * s * scale, y: cy - ry * s * scale, scale: s * scale }
+  }
 
   invalidate() {
     this.gridKey = ''
@@ -152,7 +195,10 @@ export class AsciiRenderer {
       ctx.drawImage(this.gridCache, 0, 0, width, height)
     }
 
-    if (model.count === 0) return { cols, rows, points: 0, glyphs: 0 }
+    if (model.count === 0) {
+      this.view.cols = 0
+      return { cols, rows, points: 0, glyphs: 0 }
+    }
 
     // Rotation: R = Rz * Rx * Ry (spin about object Y, tilt about X, roll about Z)
     const d2r = Math.PI / 180
@@ -189,6 +235,18 @@ export class AsciiRenderer {
     const cy = height / 2 + cfg.offsetY * height
     const persp = cfg.perspective
     const { pos, count } = model
+    const v = this.view
+    v.cw = cw
+    v.ch = ch
+    v.padX = padX
+    v.padY = padY
+    v.cols = cols
+    v.rows = rows
+    v.cx = cx
+    v.cy = cy
+    v.scale = scale
+    v.persp = persp
+    v.m.set([m00, m01, m02, m10, m11, m12, m20, m21, m22])
     const waveOn = cfg.waveAmp > 0
     const t = frame.time
 

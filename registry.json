@@ -7,7 +7,7 @@
       "name": "ascii-mesh",
       "type": "registry:component",
       "title": "ASCII Mesh",
-      "description": "Turn any image, SVG, logo or text into a rotatable, animated 3D ASCII render.",
+      "description": "Turn any image, SVG, logo, text or modelled 3D scene into a rotatable, animated 3D ASCII render.",
       "dependencies": [
         "swr"
       ],
@@ -31,6 +31,10 @@
         {
           "path": "lib/ascii/source.ts",
           "type": "registry:lib"
+        },
+        {
+          "path": "lib/ascii/scene.ts",
+          "type": "registry:lib"
         }
       ]
     },
@@ -38,7 +42,7 @@
       "name": "ascii-studio",
       "type": "registry:block",
       "title": "ASCII Studio",
-      "description": "Full editor for ASCII Mesh: sources, looks, ~70 controls, undo/redo, share links, code/JSON/PNG/text/video export.",
+      "description": "Full editor for ASCII Mesh: sources, looks, ~70 controls, a 3D modeller (shapes, sculpt, paint, OBJ/STL import), undo/redo, share links, code/JSON/PNG/text/video/PLY export.",
       "dependencies": [
         "lucide-react",
         "swr"
@@ -68,6 +72,10 @@
           "type": "registry:lib"
         },
         {
+          "path": "lib/ascii/scene.ts",
+          "type": "registry:lib"
+        },
+        {
           "path": "components/studio/ascii-studio.tsx",
           "type": "registry:component"
         },
@@ -77,6 +85,10 @@
         },
         {
           "path": "components/studio/controls.tsx",
+          "type": "registry:component"
+        },
+        {
+          "path": "components/studio/model-panel.tsx",
           "type": "registry:component"
         },
         {
