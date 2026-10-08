@@ -7,6 +7,8 @@ export type SourceState =
   | { kind: 'text'; text: string; fontKey: FontKey; weight: number }
   /** The studio's modelled scene (held separately so it shares undo history with the config). */
   | { kind: 'scene' }
+  /** The studio's composed world (held separately, like the scene). */
+  | { kind: 'world' }
 
 export type SceneTool = 'orbit' | 'select' | 'paint' | 'sculpt-add' | 'sculpt-carve'
 

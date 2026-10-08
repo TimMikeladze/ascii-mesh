@@ -7,7 +7,7 @@
       "name": "ascii-mesh",
       "type": "registry:component",
       "title": "ASCII Mesh",
-      "description": "Turn any image, SVG, logo, text or modelled 3D scene into a rotatable, animated 3D ASCII render.",
+      "description": "Turn any image, SVG, logo, text, modelled 3D scene or whole animated 2D/3D world into a rotatable ASCII render.",
       "dependencies": [
         "swr"
       ],
@@ -35,6 +35,26 @@
         {
           "path": "lib/ascii/scene.ts",
           "type": "registry:lib"
+        },
+        {
+          "path": "lib/ascii/world.ts",
+          "type": "registry:lib"
+        },
+        {
+          "path": "lib/ascii/world-geom.ts",
+          "type": "registry:lib"
+        },
+        {
+          "path": "lib/ascii/world-build.ts",
+          "type": "registry:lib"
+        },
+        {
+          "path": "lib/ascii/world-renderer.ts",
+          "type": "registry:lib"
+        },
+        {
+          "path": "lib/ascii/fields.ts",
+          "type": "registry:lib"
         }
       ]
     },
@@ -42,11 +62,13 @@
       "name": "ascii-studio",
       "type": "registry:block",
       "title": "ASCII Studio",
-      "description": "Full editor for ASCII Mesh: sources, looks, ~70 controls, a 3D modeller (shapes, sculpt, paint, OBJ/STL import), undo/redo, share links, code/JSON/PNG/text/video/PLY export.",
+      "description": "Full editor for ASCII Mesh: sources, looks, ~70 controls, a world composer (animated 2D/3D scenes, gallery, AI generation), a 3D modeller (shapes, sculpt, paint, OBJ/STL import), undo/redo, share links, code/JSON/PNG/text/video/PLY export.",
       "dependencies": [
         "lucide-react",
         "swr",
-        "use-fs"
+        "use-fs",
+        "ai",
+        "zod"
       ],
       "registryDependencies": [
         "utils"
@@ -115,6 +137,47 @@
         {
           "path": "components/studio/folder-panel.tsx",
           "type": "registry:component"
+        },
+        {
+          "path": "lib/ascii/world.ts",
+          "type": "registry:lib"
+        },
+        {
+          "path": "lib/ascii/world-geom.ts",
+          "type": "registry:lib"
+        },
+        {
+          "path": "lib/ascii/world-build.ts",
+          "type": "registry:lib"
+        },
+        {
+          "path": "lib/ascii/world-renderer.ts",
+          "type": "registry:lib"
+        },
+        {
+          "path": "lib/ascii/fields.ts",
+          "type": "registry:lib"
+        },
+        {
+          "path": "lib/ascii/worlds.ts",
+          "type": "registry:lib"
+        },
+        {
+          "path": "lib/ascii/world-prompt.ts",
+          "type": "registry:lib"
+        },
+        {
+          "path": "components/studio/world-panel.tsx",
+          "type": "registry:component"
+        },
+        {
+          "path": "components/studio/ai-panel.tsx",
+          "type": "registry:component"
+        },
+        {
+          "path": "app/api/generate/route.ts",
+          "type": "registry:file",
+          "target": "app/api/generate/route.ts"
         }
       ]
     }

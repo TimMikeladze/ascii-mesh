@@ -2,7 +2,7 @@
 
 import { useRef, useState } from 'react'
 import type { ReactNode } from 'react'
-import { Box, Upload } from 'lucide-react'
+import { Box, Sparkles, Upload } from 'lucide-react'
 import {
   CHARSETS,
   FONT_OPTIONS,
@@ -47,6 +47,10 @@ interface StudioPanelProps {
   copied: string | null
   /** Rendered as the "Model" section while the scene source is active. */
   modelPanel?: ReactNode
+  /** Rendered as the "World" section while the world source is active. */
+  worldPanel?: ReactNode
+  /** Rendered as the "Generate with AI" section. */
+  aiPanel?: ReactNode
   /** Rendered as the "Folder" section when the browser can hold a folder. */
   folderPanel?: ReactNode
 }
@@ -73,6 +77,8 @@ export function StudioPanel({
   onShare,
   copied,
   modelPanel,
+  worldPanel,
+  aiPanel,
   folderPanel,
 }: StudioPanelProps) {
   const fileRef = useRef<HTMLInputElement>(null)
@@ -82,6 +88,12 @@ export function StudioPanel({
 
   return (
     <div className="flex flex-col">
+      {aiPanel && (
+        <Section title="Generate with AI" defaultOpen>
+          {aiPanel}
+        </Section>
+      )}
+
       {folderPanel && <Section title="Folder">{folderPanel}</Section>}
 
       <Section title="Source" defaultOpen>
@@ -104,6 +116,20 @@ export function StudioPanel({
         >
           <Box className="size-3.5" aria-hidden />
           {source.kind === 'scene' ? 'Modelling — back to marks' : 'Model, sculpt & paint in 3D'}
+        </button>
+        <button
+          type="button"
+          aria-pressed={source.kind === 'world'}
+          onClick={() => onSource(source.kind === 'world' ? { kind: 'preset', key: presets[0].key } : { kind: 'world' })}
+          className={
+            'flex h-10 items-center justify-center gap-2 border text-xs tracking-widest uppercase transition-colors focus-visible:outline focus-visible:outline-1 focus-visible:outline-dashed focus-visible:outline-offset-2 ' +
+            (source.kind === 'world'
+              ? 'border-foreground bg-foreground text-background'
+              : 'border-border text-muted-foreground hover:border-foreground hover:text-foreground')
+          }
+        >
+          <Sparkles className="size-3.5" aria-hidden />
+          {source.kind === 'world' ? 'Composing — back to marks' : 'Compose a 2D / 3D scene'}
         </button>
         <div className="flex flex-col gap-2">
           <input
@@ -199,6 +225,12 @@ export function StudioPanel({
         </Section>
       )}
 
+      {source.kind === 'world' && worldPanel && (
+        <Section title="World" defaultOpen>
+          {worldPanel}
+        </Section>
+      )}
+
       <Section title="Look" defaultOpen>
         <ChipRow
           label="Presets"
@@ -211,7 +243,7 @@ export function StudioPanel({
         />
       </Section>
 
-      {source.kind !== 'scene' && <Section title="Shape">
+      {source.kind !== 'scene' && source.kind !== 'world' && <Section title="Shape">
         <Segmented<ShapeMode>
           label="3D mode"
           value={cfg.shape}
@@ -324,7 +356,7 @@ export function StudioPanel({
         <ToggleField label="Invert tones" value={cfg.invert} onChange={(invert) => onChange({ invert })} />
       </Section>
 
-      <Section title="Motion & camera" defaultOpen>
+      {source.kind !== 'world' && <Section title="Motion & camera" defaultOpen>
         <Segmented<MotionMode>
           label="Animation"
           value={cfg.motion}
@@ -359,7 +391,7 @@ export function StudioPanel({
         <SliderField label="Perspective" value={cfg.perspective} min={0} max={1.1} step={0.01} onChange={(perspective) => onChange({ perspective })} defaultValue={DEFAULT_CONFIG.perspective} format={pct} />
         <SliderField label="Offset X" value={cfg.offsetX} min={-0.5} max={0.5} step={0.01} onChange={(offsetX) => onChange({ offsetX })} defaultValue={DEFAULT_CONFIG.offsetX} format={pct} />
         <SliderField label="Offset Y" value={cfg.offsetY} min={-0.5} max={0.5} step={0.01} onChange={(offsetY) => onChange({ offsetY })} defaultValue={DEFAULT_CONFIG.offsetY} format={pct} />
-      </Section>
+      </Section>}
 
       <Section title="Effects">
         <SliderField label="Wave amplitude" value={cfg.waveAmp} min={0} max={0.3} step={0.005} onChange={(waveAmp) => onChange({ waveAmp })} defaultValue={DEFAULT_CONFIG.waveAmp} format={(v) => v.toFixed(3)} />

@@ -1,0 +1,8 @@
+{
+  "mcpServers": {
+    "ascii-studio": {
+      "command": "./node_modules/.bin/tsx",
+      "args": ["scripts/mcp-server.ts"]
+    }
+  }
+}

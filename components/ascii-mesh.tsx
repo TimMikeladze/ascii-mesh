@@ -17,6 +17,9 @@ import {
   type Vec3,
 } from '@/lib/ascii/scene'
 import { loadSource, sourceKey, type SourceSpec } from '@/lib/ascii/source'
+import { objectInstances, parseWorld, type World } from '@/lib/ascii/world'
+import { useWorldBuild } from '@/lib/ascii/world-build'
+import { WorldRenderer, type BuiltObject } from '@/lib/ascii/world-renderer'
 
 export interface AsciiMeshStats {
   fps: number
@@ -66,6 +69,10 @@ export interface AsciiMeshProps {
   onBrush?: (hit: MeshHit | null, phase: BrushPhase) => void
   /** Dashed ring drawn around a model-space sphere (e.g. the selected shape). */
   highlight?: { center: Vec3; radius: number } | null
+  /** World sources: index of the object to ring (follows its animation). */
+  highlightObject?: number | null
+  /** World sources: a click (not a drag) on the canvas reports the object under it, or -1. */
+  onPickObject?: (index: number) => void
   ref?: Ref<AsciiMeshHandle>
 }
 
@@ -88,6 +95,8 @@ export function AsciiMesh({
   brushRadius = 0.08,
   onBrush,
   highlight = null,
+  highlightObject = null,
+  onPickObject,
   ref,
 }: AsciiMeshProps) {
   const cfg = useMemo(() => mergeConfig(config), [config])
@@ -96,6 +105,7 @@ export function AsciiMesh({
   const containerRef = useRef<HTMLDivElement>(null)
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const rendererRef = useRef<AsciiRenderer | null>(null)
+  const worldRendererRef = useRef<WorldRenderer | null>(null)
   const [size, setSize] = useState({ w: 0, h: 0 })
   const [grabbing, setGrabbing] = useState(false)
 
@@ -104,7 +114,13 @@ export function AsciiMesh({
     return 'v' in spec.scene ? parseScene(spec.scene) : spec.scene
   }, [spec])
 
-  const { data: loaded, isValidating } = useSWR(spec.kind === 'scene' ? null : ['ascii-source', sourceKey(spec)], () => loadSource(spec as Exclude<SourceSpec, { kind: 'scene' }>), {
+  const world = useMemo<World | null>(() => {
+    if (spec.kind !== 'world') return null
+    return 'v' in spec.world ? parseWorld(spec.world) : spec.world
+  }, [spec])
+
+  const isImage = spec.kind !== 'scene' && spec.kind !== 'world'
+  const { data: loaded, isValidating } = useSWR(isImage ? ['ascii-source', sourceKey(spec)] : null, () => loadSource(spec as Exclude<SourceSpec, { kind: 'scene' } | { kind: 'world' }>), {
     revalidateOnFocus: false,
     revalidateOnReconnect: false,
     shouldRetryOnError: false,
@@ -148,9 +164,12 @@ export function AsciiMesh({
     [sceneGeometry, scene],
   )
 
+  const worldPx = world ? (Math.min(size.w || 600, size.h || 600) * 0.5 * cfg.zoom * world.camera.zoom) / world.fit : 1
+  const worldBuilt = useWorldBuild(world, worldPx, Math.max(3, cfg.cellSize))
+
   const imageModel = useMemo(
     () =>
-      spec.kind !== 'scene' && loaded
+      isImage && loaded
         ? buildModel(
             loaded,
             {
@@ -165,7 +184,7 @@ export function AsciiMesh({
             res,
           )
         : emptyModel(),
-    [spec.kind, loaded, cfg.shape, cfg.maskMode, cfg.invertMask, cfg.threshold, cfg.smooth, cfg.thickness, cfg.reliefDepth, res],
+    [isImage, loaded, cfg.shape, cfg.maskMode, cfg.invertMask, cfg.threshold, cfg.smooth, cfg.thickness, cfg.reliefDepth, res],
   )
   const model: Model = sceneModel ?? imageModel
 
@@ -184,6 +203,10 @@ export function AsciiMesh({
   const onBrushRef = useRef(onBrush)
   const brushRadiusRef = useRef(brushRadius)
   const highlightRef = useRef(highlight)
+  const worldRef = useRef<{ world: World; built: (BuiltObject | null)[] } | null>(null)
+  const highlightObjectRef = useRef(highlightObject)
+  const onPickObjectRef = useRef(onPickObject)
+  const clickRef = useRef<{ x: number; y: number } | null>(null)
   const ringRef = useRef<HTMLDivElement>(null)
   const highlightElRef = useRef<HTMLDivElement>(null)
   const strokeRef = useRef<number | null>(null)
@@ -200,6 +223,12 @@ export function AsciiMesh({
     highlightRef.current = highlight
     dirtyRef.current = true
   }, [highlight])
+  useEffect(() => {
+    worldRef.current = world ? { world, built: worldBuilt } : null
+    highlightObjectRef.current = highlightObject
+    onPickObjectRef.current = onPickObject
+    dirtyRef.current = true
+  }, [world, worldBuilt, highlightObject, onPickObject])
 
   useEffect(() => {
     cfgRef.current = cfg
@@ -252,7 +281,7 @@ export function AsciiMesh({
     () => ({
       getCanvas: () => canvasRef.current,
       resetView,
-      getText: () => rendererRef.current?.toText() ?? '',
+      getText: () => (worldRef.current ? worldRendererRef.current?.toText() : rendererRef.current?.toText()) ?? '',
       getModel: () => modelRef.current,
     }),
     [resetView],
@@ -264,6 +293,8 @@ export function AsciiMesh({
     if (!container || !canvas) return
     const renderer = new AsciiRenderer()
     rendererRef.current = renderer
+    const worldRenderer = new WorldRenderer()
+    worldRendererRef.current = worldRenderer
     const ctx = canvas.getContext('2d')
     if (!ctx) return
 
@@ -287,6 +318,7 @@ export function AsciiMesh({
       canvas.width = Math.round(width * dpr)
       canvas.height = Math.round(height * dpr)
       renderer.invalidate()
+      worldRenderer.invalidate()
       dirtyRef.current = true
       setSize((prev) => (prev.w === width && prev.h === height ? prev : { w: width, h: height }))
     }
@@ -316,11 +348,12 @@ export function AsciiMesh({
       const user = userRef.current
       const auto = autoRef.current
       const isPaused = pausedRef.current
+      const w = worldRef.current
 
       if (!isPaused) clockRef.current += dt
 
       // Auto-motion holds still while brushing so strokes land where the user aims.
-      if (!isPaused && !user.dragging && !reducedMotion && toolRef.current !== 'brush') {
+      if (!w && !isPaused && !user.dragging && !reducedMotion && toolRef.current !== 'brush') {
         if (c.motion === 'spin') {
           auto.x += c.spinX * dt
           auto.y += c.spinY * dt
@@ -343,6 +376,7 @@ export function AsciiMesh({
       const introProgress = c.intro > 0 && !reducedMotion ? Math.min(1, (clockRef.current - introStartRef.current) / c.intro) : 1
       const moving = user.vx !== 0 || user.vy !== 0
       const animated =
+        (w !== null && !isPaused && !reducedMotion) ||
         (c.motion !== 'static' && !isPaused && !reducedMotion) ||
         (!isPaused && (c.waveAmp > 0 || c.shimmer > 0 || c.scanStrength > 0)) ||
         introProgress < 1 ||
@@ -364,22 +398,41 @@ export function AsciiMesh({
         ry += c.swayY * Math.sin(auto.phase)
       }
 
-      const stats = renderer.render(ctx, width, height, dpr, c, modelRef.current, {
-        rotX: rx,
-        rotY: ry,
-        rotZ: rz,
-        time: clockRef.current,
-        introProgress,
-        pointerX: pointerRef.current.x,
-        pointerY: pointerRef.current.y,
-        zoomMul: zoomMulRef.current,
-      })
+      // Worlds run on their own clock: replay restarts the animation; reduced motion holds frame 0.
+      const worldTime = reducedMotion ? 0 : clockRef.current - introStartRef.current
+      const stats = w
+        ? worldRenderer.render(ctx, width, height, dpr, c, w.world, w.built, {
+            time: worldTime,
+            introProgress,
+            userX: user.x,
+            userY: user.y,
+            zoomMul: zoomMulRef.current,
+            pointerX: pointerRef.current.x,
+            pointerY: pointerRef.current.y,
+          })
+        : renderer.render(ctx, width, height, dpr, c, modelRef.current, {
+            rotX: rx,
+            rotY: ry,
+            rotZ: rz,
+            time: clockRef.current,
+            introProgress,
+            pointerX: pointerRef.current.x,
+            pointerY: pointerRef.current.y,
+            zoomMul: zoomMulRef.current,
+          })
 
-      const hl = highlightRef.current
+      let hl = highlightRef.current
+      const hlIndex = highlightObjectRef.current
+      if (w && hlIndex !== null && w.world.objects[hlIndex]) {
+        const o = w.world.objects[hlIndex]
+        const inst = objectInstances(o, worldTime)
+        const b = w.built[hlIndex]
+        hl = inst.length && b ? { center: inst[0].center, radius: b.model.radius * inst[0].scale * (inst.length > 1 ? 1.15 : 1) } : null
+      } else if (w) hl = null
       const hlEl = highlightElRef.current
       if (hlEl) {
-        if (hl && modelRef.current.count > 0) {
-          const p = renderer.project(hl.center[0], hl.center[1], hl.center[2])
+        if (hl && (w || modelRef.current.count > 0)) {
+          const p = w ? worldRenderer.project(hl.center[0], hl.center[1], hl.center[2]) : renderer.project(hl.center[0], hl.center[1], hl.center[2])
           const size = Math.max(12, hl.radius * p.scale * 2)
           hlEl.style.display = 'block'
           hlEl.style.transform = `translate(${p.x - size / 2}px, ${p.y - size / 2}px)`
@@ -403,6 +456,7 @@ export function AsciiMesh({
       motionQuery.removeEventListener('change', onMotionPref)
       intersection.disconnect()
       rendererRef.current = null
+      worldRendererRef.current = null
     }
   }, [])
 
@@ -470,6 +524,7 @@ export function AsciiMesh({
       onBrushRef.current?.(hit, 'start')
       return
     }
+    clickRef.current = e.button === 0 ? { x: e.clientX, y: e.clientY } : null
     if (!cfgRef.current.interactive && toolRef.current !== 'brush') return
     e.currentTarget.setPointerCapture(e.pointerId)
     const pts = pointersRef.current
@@ -535,6 +590,12 @@ export function AsciiMesh({
       if (e.currentTarget.hasPointerCapture(e.pointerId)) e.currentTarget.releasePointerCapture(e.pointerId)
       onBrushRef.current?.(null, 'end')
       return
+    }
+    const click = clickRef.current
+    clickRef.current = null
+    if (click && e.type === 'pointerup' && worldRef.current && onPickObjectRef.current && Math.hypot(e.clientX - click.x, e.clientY - click.y) < 4) {
+      const rect = e.currentTarget.getBoundingClientRect()
+      onPickObjectRef.current(worldRendererRef.current?.pickObject(e.clientX - rect.left, e.clientY - rect.top) ?? -1)
     }
     const pts = pointersRef.current
     pts.delete(e.pointerId)

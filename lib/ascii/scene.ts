@@ -705,6 +705,15 @@ export function buildSceneModel(scene: MeshScene, res: number): SceneModel {
   return toModel(sampleScene(scene, shapes, h, null), h, res)
 }
 
+/** Points sampled at a fixed spacing `h` (world units, floored by POINT_BUDGET) — used by worlds. */
+export function buildSceneModelAt(scene: MeshScene, h: number): SceneModel {
+  const shapes = sceneShapes(scene)
+  let area = 0
+  for (const s of shapes) area += LOCAL_AREA[s.kind] * (1 / Math.min(...s.inv)) ** 2
+  const spacingH = area / (h * h) > POINT_BUDGET ? Math.sqrt(area / POINT_BUDGET) : h
+  return toModel(sampleScene(scene, shapes, spacingH, null), spacingH, 0)
+}
+
 /** Dabs added or removed between two dab lists when one extends the other (a stroke or its undo), else null. */
 export function dabChanges(prev: Dab[], next: Dab[]): Dab[] | null {
   const [short, long] = prev.length <= next.length ? [prev, next] : [next, prev]

@@ -1,5 +1,6 @@
 import { DEFAULT_CONFIG, FONT_OPTIONS, diffFromDefaults, mergeConfig, type AsciiConfig, type FontKey } from './config'
 import { parseScene, serializeScene, type MeshScene, type SerializedScene } from './scene'
+import { parseWorld, serializeWorld, type SerializedWorld, type World } from './world'
 
 // A "piece" is one studio composition saved as `<name>.ascii.json` in a watched folder. Agents
 // write these by hand; the studio renders them and saves edits back. See docs/studio-folder.md.
@@ -13,6 +14,8 @@ export type PieceSource =
   /** Image file relative to the piece's own directory. */
   | { kind: 'image'; path: string }
   | { kind: 'scene'; scene: MeshScene }
+  /** A composed world — objects, fields, camera (docs/worlds.md). */
+  | { kind: 'world'; world: World }
 
 export interface Piece {
   name?: string
@@ -24,8 +27,9 @@ export interface SerializedPiece {
   v: 1
   name?: string
   source:
-    | Exclude<PieceSource, { kind: 'scene' }>
+    | Exclude<PieceSource, { kind: 'scene' } | { kind: 'world' }>
     | { kind: 'scene'; scene: SerializedScene }
+    | { kind: 'world'; world: SerializedWorld }
   config: Partial<AsciiConfig>
 }
 
@@ -67,6 +71,10 @@ function parseSource(data: unknown): PieceSource | null {
       const scene = parseScene(s.scene)
       return scene ? { kind: 'scene', scene } : null
     }
+    case 'world': {
+      const world = parseWorld(s.world)
+      return world ? { kind: 'world', world } : null
+    }
     default:
       return null
   }
@@ -83,7 +91,7 @@ export function parsePiece(text: string): { piece: Piece } | { error: string } {
   if (!data || typeof data !== 'object') return { error: 'Piece must be a JSON object' }
   const d = data as Record<string, unknown>
   const source = parseSource(d.source)
-  if (!source) return { error: 'Missing or invalid "source" (preset, text, image or scene)' }
+  if (!source) return { error: 'Missing or invalid "source" (preset, text, image, scene or world)' }
   return {
     piece: {
       ...(typeof d.name === 'string' ? { name: d.name } : {}),
@@ -99,7 +107,12 @@ export function serializePiece(piece: Piece): string {
   const out: SerializedPiece = {
     v: 1,
     ...(piece.name ? { name: piece.name } : {}),
-    source: source.kind === 'scene' ? { kind: 'scene', scene: serializeScene(source.scene) } : source,
+    source:
+      source.kind === 'scene'
+        ? { kind: 'scene', scene: serializeScene(source.scene) }
+        : source.kind === 'world'
+          ? { kind: 'world', world: serializeWorld(source.world) }
+          : source,
     config: diffFromDefaults(piece.config),
   }
   return `${JSON.stringify(out, null, 2)}\n`

@@ -1,13 +1,16 @@
 import { resolveFontFamily, type FontKey } from './config'
 import type { MeshScene, SerializedScene } from './scene'
+import type { SerializedWorld, World } from './world'
 
 export type SourceSpec =
   | { kind: 'url'; url: string; name?: string }
   | { kind: 'text'; text: string; fontKey: FontKey; weight: number }
   /** A modelled scene: the studio's live `MeshScene` or a saved scene JSON (`SerializedScene`). */
   | { kind: 'scene'; scene: MeshScene | SerializedScene }
+  /** A composed world: many animated objects over generative fields (docs/worlds.md). */
+  | { kind: 'world'; world: World | SerializedWorld }
 
-type ImageSpec = Exclude<SourceSpec, { kind: 'scene' }>
+type ImageSpec = Exclude<SourceSpec, { kind: 'scene' } | { kind: 'world' }>
 
 export interface LoadedSource {
   image: CanvasImageSource

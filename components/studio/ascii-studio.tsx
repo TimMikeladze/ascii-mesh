@@ -23,12 +23,18 @@ import {
 } from '@/lib/ascii/scene'
 import { FRAME_SUFFIX, nextPiecePath, parsePiece, pieceStem, relativeTo, resolveRelative, serializePiece, type Piece, type PieceSource } from '@/lib/ascii/piece'
 import { loadSource, type SourceSpec } from '@/lib/ascii/source'
+import { makeObject, objectLabel, parseWorld, serializeWorld, type World } from '@/lib/ascii/world'
+import { WORLD_PRESETS, getWorldPreset } from '@/lib/ascii/worlds'
 import { cn } from '@/lib/utils'
 import { useStudioFolder } from './folder'
 import { FolderPanel } from './folder-panel'
 import { ModelPanel, TOOLS } from './model-panel'
 import { StudioPanel } from './studio-panel'
 import type { BrushSettings, SceneTool, SourceState } from './types'
+import { WorldPanel } from './world-panel'
+import { AiPanel } from './ai-panel'
+import { AI_CONFIG_KEYS } from '@/lib/ascii/world-prompt'
+import { agentPrompt } from '@/lib/ascii/handoff'
 
 const NAV_BUTTON =
   'flex h-full items-center gap-1.5 px-3 text-xs lg:px-0 lg:hover:bg-transparent lg:hover:text-muted-foreground max-sm:px-3.5 tracking-widest uppercase text-foreground/90 transition-colors hover:bg-foreground hover:text-background focus-visible:outline focus-visible:outline-1 focus-visible:outline-dashed focus-visible:-outline-offset-4 whitespace-nowrap'
@@ -37,6 +43,24 @@ function buildCode(cfg: AsciiConfig, source: SourceState): string {
   const diff = diffFromDefaults(cfg)
   let src: string
   let note = ''
+  if (source.kind === 'world') {
+    return `import { AsciiMesh } from '@/components/ascii-mesh'
+import type { SerializedWorld } from '@/lib/ascii/world'
+// World → Export downloads this file
+import world from './world.json'
+
+const config = ${JSON.stringify(diff, null, 2)}
+
+export function Hero() {
+  return (
+    <AsciiMesh
+      source={{ kind: 'world', world: world as SerializedWorld }}
+      config={config}
+      className="h-[640px] w-full"
+    />
+  )
+}`
+  }
   if (source.kind === 'scene') {
     return `import { AsciiMesh } from '@/components/ascii-mesh'
 import type { SerializedScene } from '@/lib/ascii/scene'
@@ -81,16 +105,17 @@ ${note}      source=${src}
 
 // Share links: `#s=<base64url JSON>` holding the config diff, a non-upload source and, for
 // modelled scenes, the shapes + sculpt (paint and imported meshes stay local).
-export function encodeShare(cfg: AsciiConfig, source: SourceState, scene?: MeshScene): string {
+export function encodeShare(cfg: AsciiConfig, source: SourceState, scene?: MeshScene, world?: World): string {
   const src = source.kind === 'upload' ? undefined : source
   const m = source.kind === 'scene' && scene ? serializeScene(scene, true) : undefined
-  const bytes = new TextEncoder().encode(JSON.stringify({ c: diffFromDefaults(cfg), s: src, m }))
+  const w = source.kind === 'world' && world ? serializeWorld(world, true) : undefined
+  const bytes = new TextEncoder().encode(JSON.stringify({ c: diffFromDefaults(cfg), s: src, m, w }))
   let bin = ''
   bytes.forEach((b) => (bin += String.fromCharCode(b)))
   return btoa(bin).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '')
 }
 
-export function decodeShare(hash: string): { cfg: AsciiConfig; source?: SourceState; scene?: MeshScene } | null {
+export function decodeShare(hash: string): { cfg: AsciiConfig; source?: SourceState; scene?: MeshScene; world?: World } | null {
   const m = hash.match(/[#&]s=([\w-]+)/)
   if (!m) return null
   try {
@@ -99,9 +124,10 @@ export function decodeShare(hash: string): { cfg: AsciiConfig; source?: SourceSt
     const known = Object.fromEntries(Object.entries(data.c ?? {}).filter(([k]) => k in DEFAULT_CONFIG))
     const s = data.s as SourceState | undefined
     const scene = data.m ? (parseScene(data.m) ?? undefined) : undefined
-    // A scene source without a payload (session restore) uses the separately saved scene.
-    const source = s && (s.kind === 'preset' || s.kind === 'text' || s.kind === 'scene') ? s : undefined
-    return { cfg: mergeConfig(known as Partial<AsciiConfig>), source, scene }
+    const world = data.w ? (parseWorld(data.w) ?? undefined) : undefined
+    // A scene / world source without a payload (session restore) uses the separately saved one.
+    const source = s && (s.kind === 'preset' || s.kind === 'text' || s.kind === 'scene' || s.kind === 'world') ? s : undefined
+    return { cfg: mergeConfig(known as Partial<AsciiConfig>), source, scene, world }
   } catch {
     return null
   }
@@ -109,6 +135,7 @@ export function decodeShare(hash: string): { cfg: AsciiConfig; source?: SourceSt
 
 const SESSION_KEY = 'ascii-mesh:session'
 const SCENE_KEY = 'ascii-mesh:scene'
+const WORLD_KEY = 'ascii-mesh:world'
 const HISTORY_LIMIT = 100
 const BRUSH_TOOLS: SceneTool[] = ['paint', 'sculpt-add', 'sculpt-carve']
 const SHORTCUTS: [string, string][] = [
@@ -124,7 +151,7 @@ const SHORTCUTS: [string, string][] = [
   ['← ↑ → ↓', 'rotate (canvas focused)'],
   ['o v b g e', 'model: orbit · select · paint · clay · carve'],
   ['[ / ]', 'model: brush size'],
-  ['d / ⌫', 'model: duplicate / delete shape'],
+  ['d / ⌫', 'model / world: duplicate / delete selection'],
   ['+ / − / 0', 'zoom / reset view'],
   ['?', 'this help'],
 ]
@@ -157,6 +184,7 @@ function download(name: string, data: BlobPart, type: string) {
 interface Snapshot {
   cfg: AsciiConfig
   scene: MeshScene
+  world: World
 }
 
 function isTyping(target: EventTarget | null) {
@@ -184,6 +212,10 @@ export function AsciiStudio() {
   const [brush, setBrush] = useState<BrushSettings>({ radius: 0.08, color: '#ff6a3d' })
   const [selected, setSelected] = useState<string | null>(null)
 
+  const [world, setWorld] = useState<World>(() => WORLD_PRESETS[0].world())
+  const [worldSel, setWorldSel] = useState<string | null>(null)
+  const [worldPreset, setWorldPreset] = useState<string | null>(WORLD_PRESETS[0].key)
+
   // Undo history over config + scene. Rapid edits (slider drags) within 500ms coalesce into one step.
   const pastRef = useRef<Snapshot[]>([])
   const futureRef = useRef<Snapshot[]>([])
@@ -191,7 +223,8 @@ export function AsciiStudio() {
   const cfgRef = useRef(cfg)
   cfgRef.current = cfg
   const sceneRef = useRef(scene)
-  const snapshot = (): Snapshot => ({ cfg: cfgRef.current, scene: sceneRef.current })
+  const worldRef = useRef(world)
+  const snapshot = (): Snapshot => ({ cfg: cfgRef.current, scene: sceneRef.current, world: worldRef.current })
   const pushHistory = useCallback((coalesce: boolean) => {
     const now = Date.now()
     if (!coalesce || now - lastEditRef.current > 500) {
@@ -221,6 +254,16 @@ export function AsciiStudio() {
     },
     [pushHistory],
   )
+  const commitWorld = useCallback(
+    (update: (w: World) => World, coalesce = true) => {
+      const next = update(worldRef.current)
+      if (next === worldRef.current) return
+      pushHistory(coalesce)
+      worldRef.current = next
+      setWorld(next)
+    },
+    [pushHistory],
+  )
   const patch = useCallback((p: Partial<AsciiConfig>) => commit((c) => ({ ...c, ...p })), [commit])
   const step = useCallback((from: React.RefObject<Snapshot[]>, to: React.RefObject<Snapshot[]>) => {
     const target = from.current.pop()
@@ -229,8 +272,10 @@ export function AsciiStudio() {
     lastEditRef.current = 0
     cfgRef.current = target.cfg
     sceneRef.current = target.scene
+    worldRef.current = target.world
     setCfg(target.cfg)
     setScene(target.scene)
+    setWorld(target.world)
   }, [])
   const undo = useCallback(() => step(pastRef, futureRef), [step])
   const redo = useCallback(() => step(futureRef, pastRef), [step])
@@ -238,11 +283,12 @@ export function AsciiStudio() {
 
   const spec = useMemo<SourceSpec>(() => {
     if (source.kind === 'scene') return { kind: 'scene', scene }
+    if (source.kind === 'world') return { kind: 'world', world }
     if (source.kind === 'text') return source
     if (source.kind === 'upload') return { kind: 'url', url: source.url, name: source.name }
     const preset = getSourcePresets().find((p) => p.key === source.key) ?? getSourcePresets()[0]
     return { kind: 'url', url: preset.url, name: `${preset.key}.svg` }
-  }, [source, scene])
+  }, [source, scene, world])
 
   const flash = useCallback((message: string) => {
     setNotice(message)
@@ -307,10 +353,10 @@ export function AsciiStudio() {
   // Download/clipboard names follow the source: "logo.svg" -> "logo-ascii.png".
   const baseName = useMemo(() => {
     const raw =
-      source.kind === 'upload' ? source.name : source.kind === 'text' ? source.text : source.kind === 'scene' ? 'model' : source.key
+      source.kind === 'upload' ? source.name : source.kind === 'text' ? source.text : source.kind === 'scene' ? 'model' : source.kind === 'world' ? (world.name ?? 'world') : source.key
     const slug = raw.replace(/\.[a-z0-9]+$/i, '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 40)
     return `${slug || 'ascii-mesh'}-ascii`
-  }, [source])
+  }, [source, world.name])
 
   const copyImage = useCallback(() => {
     const canvas = meshRef.current?.getCanvas()
@@ -375,22 +421,27 @@ export function AsciiStudio() {
       link.click()
       window.setTimeout(() => URL.revokeObjectURL(link.href), 1000)
     }
+    // Worlds record exactly one loop from the start (replay restarts the world clock).
+    const seconds = source.kind === 'world' ? Math.min(30, worldRef.current.duration) : 5
+    if (source.kind === 'world') setReplayKey((k) => k + 1)
     setPaused(false)
     setRecording(true)
-    flash('Recording 5 seconds…')
+    flash(`Recording ${seconds} seconds…`)
     recorder.start()
-    window.setTimeout(() => recorder.state !== 'inactive' && recorder.stop(), 5000)
-  }, [recording, flash, baseName])
+    window.setTimeout(() => recorder.state !== 'inactive' && recorder.stop(), seconds * 1000)
+  }, [recording, flash, baseName, source.kind])
 
   const share = useCallback(async () => {
-    const url = `${location.origin}${location.pathname}#s=${encodeShare(cfg, source, scene)}`
+    const url = `${location.origin}${location.pathname}#s=${encodeShare(cfg, source, scene, world)}`
     history.replaceState(null, '', url)
     await copy(url, 'share')
     if (source.kind === 'upload') flash('Link copied — uploads stay local, so the link uses the default source')
     else if (source.kind === 'scene' && (Object.keys(scene.paint).length || scene.prims.some((p) => p.type === 'mesh')))
       flash('Link copied — paint and imported meshes stay local; export Scene JSON to share them')
+    else if (source.kind === 'world' && world.objects.some((o) => o.geom.kind === 'image' && /^(blob|data):/.test(o.geom.url)))
+      flash('Link copied — uploaded images stay local; export the world JSON to share them')
     else flash('Share link copied')
-  }, [cfg, source, scene, copy, flash])
+  }, [cfg, source, scene, world, copy, flash])
 
   // Restore from a share link (on load and when the hash changes), else from the last session.
   const [restored, setRestored] = useState(false)
@@ -399,6 +450,10 @@ export function AsciiStudio() {
       const shared = decodeShare(location.hash)
       if (!shared) return false
       if (shared.scene) commitScene(() => shared.scene!, false)
+      if (shared.world) {
+        commitWorld(() => shared.world!, false)
+        setWorldPreset(null)
+      }
       commit(() => shared.cfg, false)
       if (shared.source) setSource(shared.source)
       setReplayKey((k) => k + 1)
@@ -417,12 +472,19 @@ export function AsciiStudio() {
           sceneRef.current = savedScene
           setScene(savedScene)
         }
+        const rawWorld = localStorage.getItem(WORLD_KEY)
+        const savedWorld = rawWorld ? parseWorld(JSON.parse(rawWorld)) : null
+        if (savedWorld) {
+          worldRef.current = savedWorld
+          setWorld(savedWorld)
+          setWorldPreset(WORLD_PRESETS.find((p) => p.label === savedWorld.name)?.key ?? null)
+        }
       } catch {}
     }
     setRestored(true)
     window.addEventListener('hashchange', apply)
     return () => window.removeEventListener('hashchange', apply)
-  }, [commit, commitScene])
+  }, [commit, commitScene, commitWorld])
 
   useEffect(() => {
     if (!restored) return
@@ -446,6 +508,16 @@ export function AsciiStudio() {
     return () => window.clearTimeout(t)
   }, [scene, restored])
 
+  useEffect(() => {
+    if (!restored) return
+    const t = window.setTimeout(() => {
+      try {
+        localStorage.setItem(WORLD_KEY, JSON.stringify(serializeWorld(world, true)))
+      } catch {}
+    }, 600)
+    return () => window.clearTimeout(t)
+  }, [world, restored])
+
   // ---- Modelling ----
   const pickTool = useCallback(
     (next: SceneTool) => {
@@ -464,15 +536,43 @@ export function AsciiStudio() {
     flash('Modelling — add shapes, then sculpt or paint them on the canvas')
   }, [flash])
 
+  const applyWorldPreset = useCallback(
+    (key: string) => {
+      const preset = getWorldPreset(key)
+      if (!preset) return
+      pushHistory(false)
+      const next = preset.world()
+      const nextCfg = mergeConfig(preset.config)
+      worldRef.current = next
+      cfgRef.current = nextCfg
+      setWorld(next)
+      setCfg(nextCfg)
+      setWorldPreset(key)
+      setWorldSel(null)
+      meshRef.current?.resetView()
+      setReplayKey((k) => k + 1)
+    },
+    [pushHistory],
+  )
+
+  const enterWorld = useCallback(() => {
+    setSource({ kind: 'world' })
+    setTool('orbit')
+    if (worldPreset) applyWorldPreset(worldPreset)
+    else setReplayKey((k) => k + 1)
+    flash('Composing — pick a scene from the gallery, or add objects and backgrounds')
+  }, [flash, worldPreset, applyWorldPreset])
+
   const onSource = useCallback(
     (next: SourceState) => {
       if (next.kind === 'scene') enterScene()
+      else if (next.kind === 'world') enterWorld()
       else {
         setSource(next)
         setTool('orbit')
       }
     },
-    [enterScene],
+    [enterScene, enterWorld],
   )
 
   // Live stroke state. One stroke = one undo step; scene updates are batched per animation frame.
@@ -569,6 +669,71 @@ export function AsciiStudio() {
     download(`${baseName}.ply`, toPly(model), 'application/octet-stream')
   }, [baseName, flash])
 
+  const exportWorldJson = useCallback(
+    () => download(`${baseName.replace(/-ascii$/, '')}.world.json`, JSON.stringify(serializeWorld(worldRef.current), null, 2), 'application/json'),
+    [baseName],
+  )
+  const importWorldFile = useCallback(
+    async (file: File) => {
+      try {
+        const data = JSON.parse(await file.text())
+        // Accept a bare world, a serialized piece holding one, or a scene (added as an object).
+        const raw = data?.source?.kind === 'world' ? data.source.world : data
+        const scn = !raw?.objects && raw?.prims ? parseScene(raw) : null
+        if (scn) {
+          const o = makeObject('sculpt', { geom: { kind: 'sculpt', scene: scn }, name: file.name.replace(/\.json$/, ''), source: true })
+          commitWorld((w) => ({ ...w, objects: [...w.objects, o] }), false)
+          setWorldSel(o.id)
+          flash(`Added ${file.name} as an object`)
+          return
+        }
+        const next = parseWorld(raw)
+        if (!next || !Array.isArray(raw?.objects)) throw new Error('Not a world file')
+        commitWorld(() => next, false)
+        setWorldPreset(null)
+        setWorldSel(null)
+        flash(`Loaded ${file.name}`)
+      } catch (e) {
+        flash(`Could not import ${file.name}: ${(e as Error).message}`)
+      }
+    },
+    [commitWorld, flash],
+  )
+  const addModelled = useCallback(() => {
+    const s = sceneRef.current
+    if (!s.prims.length && !s.dabs.length) {
+      flash('The modeller is empty — build something under Model, sculpt & paint first')
+      return
+    }
+    const o = makeObject('sculpt', { geom: { kind: 'sculpt', scene: s }, name: 'Modelled object', source: true })
+    commitWorld((w) => ({ ...w, objects: [...w.objects, o] }), false)
+    setWorldSel(o.id)
+  }, [commitWorld, flash])
+  const aiCurrent = useCallback(() => {
+    if (source.kind !== 'world') return null
+    const c = cfgRef.current
+    const strip = (k: string, v: unknown) => (k === 'id' ? undefined : v)
+    return JSON.stringify({ world: serializeWorld(worldRef.current, true), config: Object.fromEntries(AI_CONFIG_KEYS.map((k) => [k, c[k]])) }, strip)
+  }, [source.kind])
+  const applyAi = useCallback(
+    (next: World, patchCfg: Partial<AsciiConfig>) => {
+      pushHistory(false)
+      const nextCfg = { ...cfgRef.current, ...patchCfg }
+      worldRef.current = next
+      cfgRef.current = nextCfg
+      setWorld(next)
+      setCfg(nextCfg)
+      setWorldPreset(null)
+      setWorldSel(null)
+      setSource({ kind: 'world' })
+      setTool('orbit')
+      setReplayKey((k) => k + 1)
+    },
+    [pushHistory],
+  )
+  const worldSelIndex = source.kind === 'world' ? world.objects.findIndex((o) => o.id === worldSel) : -1
+  const pickWorldObject = useCallback((i: number) => setWorldSel(i >= 0 ? (worldRef.current.objects[i]?.id ?? null) : null), [])
+
   const selectedPrim = scene.prims.find((p) => p.id === selected)
   const highlight = useMemo(
     () =>
@@ -639,9 +804,25 @@ export function AsciiStudio() {
           return
         }
       }
+      if (source.kind === 'world' && worldSel) {
+        const sel = worldRef.current.objects.find((o) => o.id === worldSel)
+        if (sel && (key === 'delete' || key === 'backspace')) {
+          e.preventDefault()
+          commitWorld((w) => ({ ...w, objects: w.objects.filter((o) => o.id !== sel.id) }), false)
+          setWorldSel(null)
+          return
+        }
+        if (sel && key === 'd') {
+          const dup = { ...sel, id: newId(), pos: [sel.pos[0] + 0.2, sel.pos[1], sel.pos[2]] as Vec3 }
+          commitWorld((w) => ({ ...w, objects: [...w.objects, dup] }), false)
+          setWorldSel(dup.id)
+          return
+        }
+      }
       if (key === 'escape') {
         setHelpOpen(false)
         setSelected(null)
+        setWorldSel(null)
       }
       else if (e.key === '?') setHelpOpen((o) => !o)
       else if (key === 'x') {
@@ -659,7 +840,7 @@ export function AsciiStudio() {
     }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
-  }, [code, copy, share, undo, redo, commit, commitScene, toggleFullscreen, copyText, source.kind, selected, pickTool])
+  }, [code, copy, share, undo, redo, commit, commitScene, commitWorld, toggleFullscreen, copyText, source.kind, selected, worldSel, pickTool])
 
   // ---- Folder (docs/studio-folder.md) ----
   // `diskRef` is the active piece's text as last read from or written to disk, so our own writes
@@ -680,13 +861,14 @@ export function AsciiStudio() {
     (path: string): Piece | null => {
       let src: PieceSource
       if (source.kind === 'scene') src = { kind: 'scene', scene }
+      else if (source.kind === 'world') src = { kind: 'world', world }
       else if (source.kind === 'upload') {
         if (!source.path) return null
         src = { kind: 'image', path: relativeTo(path, source.path) }
       } else src = source
       return { source: src, config: cfg }
     },
-    [source, scene, cfg],
+    [source, scene, world, cfg],
   )
 
   const applyPiece = useCallback(
@@ -716,6 +898,7 @@ export function AsciiStudio() {
           uploadUrlRef.current = url
           next = { kind: 'upload', url, name: file.name, path: target }
         } else if (piece.source.kind === 'scene') next = { kind: 'scene' }
+        else if (piece.source.kind === 'world') next = { kind: 'world' }
         else next = piece.source
         savedRef.current = serializePiece(piece)
         // One undo step for config + scene together.
@@ -725,6 +908,11 @@ export function AsciiStudio() {
         if (piece.source.kind === 'scene') {
           sceneRef.current = piece.source.scene
           setScene(piece.source.scene)
+        }
+        if (piece.source.kind === 'world') {
+          worldRef.current = piece.source.world
+          setWorld(piece.source.world)
+          setWorldPreset(null)
         }
         setSource(next)
         if (next.kind !== 'scene') setTool('orbit')
@@ -859,7 +1047,7 @@ export function AsciiStudio() {
       writeFolder(`${pieceStem(activePiece)}${FRAME_SUFFIX}`, `${text}\n`).catch(() => undefined)
     }, 1500)
     return () => window.clearTimeout(t)
-  }, [activePiece, folderRoot, writeFolder, cfg, scene, source, stats?.points])
+  }, [activePiece, folderRoot, writeFolder, cfg, scene, world, source, stats?.points])
 
   const newPiece = useCallback(async () => {
     const path = nextPiecePath(folder.pieces)
@@ -877,6 +1065,21 @@ export function AsciiStudio() {
     }
   }, [folder.pieces, writeFolder, pieceFromState, cfg, flash])
 
+  // Handoff for an agent in the user's terminal: point at the open piece, else inline the scene.
+  const handoffPrompt = useCallback(
+    (request: string) => {
+      const piece = activePiece ? null : pieceFromState('scene.ascii.json')
+      return agentPrompt({
+        request,
+        piecePath: activePiece,
+        folderName: folderRoot,
+        pieceJson: piece ? serializePiece(piece) : null,
+        studioUrl: `${location.origin}${location.pathname}`,
+      })
+    },
+    [activePiece, folderRoot, pieceFromState],
+  )
+
   const handleStats = useCallback((s: AsciiMeshStats) => setStats(s), [])
 
   return (
@@ -886,7 +1089,7 @@ export function AsciiStudio() {
           <h1 className="text-sm font-medium tracking-wide">ascii/mesh</h1>
         </div>
         <p className="hidden flex-1 items-center truncate px-5 text-xs text-muted-foreground xl:flex">
-          Turn any image, SVG or logo into a rotatable 3D ASCII animation.
+          Turn images, logos, sculptures and whole 2D / 3D scenes into animated ASCII.
         </p>
         <nav aria-label="Studio actions" className="ml-auto flex items-stretch overflow-x-auto border-dashed border-border lg:col-start-3 lg:ml-0 lg:justify-between lg:border-l lg:px-5">
           <input
@@ -977,6 +1180,8 @@ export function AsciiStudio() {
               brushRadius={tool === 'select' ? 0.015 : brush.radius}
               onBrush={onBrush}
               highlight={highlight}
+              highlightObject={worldSelIndex >= 0 ? worldSelIndex : null}
+              onPickObject={source.kind === 'world' ? pickWorldObject : undefined}
               className="h-full w-full"
               label="Interactive 3D ASCII render. Drag or use arrow keys to rotate, plus and minus to zoom."
             />
@@ -1025,6 +1230,10 @@ export function AsciiStudio() {
                 </label>
               )}
             </div>
+          ) : source.kind === 'world' ? (
+            <p className="pointer-events-none absolute top-5 right-5 hidden max-w-56 sm:block text-right text-xs leading-relaxed text-foreground/90">
+              {world.name ?? 'Untitled world'}
+            </p>
           ) : (
             <p className="pointer-events-none absolute top-5 right-5 hidden max-w-56 sm:block text-right text-xs leading-relaxed text-foreground/90">
               Any image, SVG or logo, rebuilt as a rotatable field of characters.
@@ -1052,7 +1261,11 @@ export function AsciiStudio() {
 
           <p className="pointer-events-none absolute right-5 bottom-5 text-right text-xs text-muted-foreground">
             <span className="pointer-coarse:hidden">
-              {source.kind === 'scene' ? (TOOLS.find((t) => t.value === tool)?.hint.toLowerCase() ?? '') + ' · alt-drag to orbit' : 'drag to rotate · double-click to reset · paste an image'}
+              {source.kind === 'scene'
+                ? (TOOLS.find((t) => t.value === tool)?.hint.toLowerCase() ?? '') + ' · alt-drag to orbit'
+                : source.kind === 'world'
+                  ? `drag to orbit · click to select${worldSelIndex >= 0 ? ` · ${objectLabel(world.objects[worldSelIndex], worldSelIndex).toLowerCase()}` : ''}`
+                  : 'drag to rotate · double-click to reset · paste an image'}
             </span>
             <span className="hidden lg:block pointer-coarse:hidden">press ? for shortcuts</span>
             <span className="hidden pointer-coarse:inline">drag · pinch · double-tap</span>
@@ -1122,6 +1335,30 @@ export function AsciiStudio() {
               folder.supported || folder.root ? (
                 <FolderPanel folder={folder} active={activePiece} onOpen={openPiece} onNew={newPiece} />
               ) : undefined
+            }
+            aiPanel={
+              <AiPanel
+                current={aiCurrent}
+                onApply={applyAi}
+                handoff={handoffPrompt}
+                onCopy={(text) => {
+                  copy(text, 'handoff')
+                  flash('Prompt copied — paste it into Claude Code running in your terminal')
+                }}
+              />
+            }
+            worldPanel={
+              <WorldPanel
+                world={world}
+                onWorld={commitWorld}
+                onPreset={applyWorldPreset}
+                activePreset={worldPreset}
+                selected={worldSel}
+                onSelect={setWorldSel}
+                onAddModelled={addModelled}
+                onImportFile={importWorldFile}
+                onExportJson={exportWorldJson}
+              />
             }
             modelPanel={
               <ModelPanel
