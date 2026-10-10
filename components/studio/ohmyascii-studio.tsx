@@ -2,6 +2,7 @@
 
 import type React from 'react'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import Link from 'next/link'
 import { Code2, Link2, Pause, Play, RotateCcw, Upload, Undo2 } from 'lucide-react'
 import { OhMyAscii, type OhMyAsciiHandle, type OhMyAsciiStats, type BrushPhase, type MeshHit } from '@/components/ohmyascii'
 import { CHARSETS, DEFAULT_CONFIG, LOOKS, diffFromDefaults, mergeConfig, type AsciiConfig, type ColorMode } from '@/lib/ascii/config'
@@ -29,6 +30,7 @@ import { cn } from '@/lib/utils'
 import { useStudioFolder } from './folder'
 import { FolderPanel } from './folder-panel'
 import { ModelPanel, TOOLS } from './model-panel'
+import { decodeShare, encodeShare } from './share'
 import { StudioPanel } from './studio-panel'
 import type { BrushSettings, SceneTool, SourceState } from './types'
 import { WorldPanel } from './world-panel'
@@ -103,35 +105,7 @@ ${note}      source=${src}
 }`
 }
 
-// Share links: `#s=<base64url JSON>` holding the config diff, a non-upload source and, for
-// modelled scenes, the shapes + sculpt (paint and imported meshes stay local).
-export function encodeShare(cfg: AsciiConfig, source: SourceState, scene?: MeshScene, world?: World): string {
-  const src = source.kind === 'upload' ? undefined : source
-  const m = source.kind === 'scene' && scene ? serializeScene(scene, true) : undefined
-  const w = source.kind === 'world' && world ? serializeWorld(world, true) : undefined
-  const bytes = new TextEncoder().encode(JSON.stringify({ c: diffFromDefaults(cfg), s: src, m, w }))
-  let bin = ''
-  bytes.forEach((b) => (bin += String.fromCharCode(b)))
-  return btoa(bin).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '')
-}
-
-export function decodeShare(hash: string): { cfg: AsciiConfig; source?: SourceState; scene?: MeshScene; world?: World } | null {
-  const m = hash.match(/[#&]s=([\w-]+)/)
-  if (!m) return null
-  try {
-    const bin = atob(m[1].replace(/-/g, '+').replace(/_/g, '/'))
-    const data = JSON.parse(new TextDecoder().decode(Uint8Array.from(bin, (ch) => ch.charCodeAt(0))))
-    const known = Object.fromEntries(Object.entries(data.c ?? {}).filter(([k]) => k in DEFAULT_CONFIG))
-    const s = data.s as SourceState | undefined
-    const scene = data.m ? (parseScene(data.m) ?? undefined) : undefined
-    const world = data.w ? (parseWorld(data.w) ?? undefined) : undefined
-    // A scene / world source without a payload (session restore) uses the separately saved one.
-    const source = s && (s.kind === 'preset' || s.kind === 'text' || s.kind === 'scene' || s.kind === 'world') ? s : undefined
-    return { cfg: mergeConfig(known as Partial<AsciiConfig>), source, scene, world }
-  } catch {
-    return null
-  }
-}
+// Share links (`#s=…`, see ./share) and gallery deep links (`#w=<preset key>`) restore on load.
 
 const SESSION_KEY = 'ohmyascii:session'
 const SCENE_KEY = 'ohmyascii:scene'
@@ -448,7 +422,21 @@ export function OhMyAsciiStudio() {
   useEffect(() => {
     const apply = () => {
       const shared = decodeShare(location.hash)
-      if (!shared) return false
+      if (!shared) {
+        // Gallery deep link: `#w=<preset key>` opens the studio on that creation.
+        const wm = location.hash.match(/[#&]w=([\w-]+)/)
+        const preset = wm ? getWorldPreset(wm[1]) : undefined
+        if (!preset) return false
+        commitWorld(() => preset.world(), false)
+        commit(() => mergeConfig(preset.config), false)
+        setWorldPreset(wm![1])
+        setWorldSel(null)
+        setSource({ kind: 'world' })
+        setTool('orbit')
+        meshRef.current?.resetView()
+        setReplayKey((k) => k + 1)
+        return true
+      }
       if (shared.scene) commitScene(() => shared.scene!, false)
       if (shared.world) {
         commitWorld(() => shared.world!, false)
@@ -1080,13 +1068,28 @@ export function OhMyAsciiStudio() {
     [activePiece, folderRoot, pieceFromState],
   )
 
+  // ---- Handoff from the home composer ----
+  // `/studio?q=<prompt>` makes the AI panel start a fresh chat with it; the param is stripped so
+  // reloads don't re-send.
+  const [autoPrompt, setAutoPrompt] = useState<string | null>(null)
+  useEffect(() => {
+    const q = new URLSearchParams(location.search).get('q')
+    if (!q) return
+    setAutoPrompt(q)
+    const clean = new URL(location.href)
+    clean.searchParams.delete('q')
+    history.replaceState(null, '', clean)
+  }, [])
+
   const handleStats = useCallback((s: OhMyAsciiStats) => setStats(s), [])
 
   return (
-    <div className="flex min-h-dvh flex-col lg:h-dvh lg:overflow-hidden">
+    <div className="studio-shell flex min-h-dvh flex-col lg:h-dvh lg:overflow-hidden">
       <header className="flex h-14 shrink-0 items-stretch border-b border-dashed border-border lg:grid lg:grid-cols-[auto_minmax(0,1fr)_22rem]">
         <div className="flex items-center border-r border-dashed border-border px-4 sm:px-5">
-          <h1 className="text-sm font-medium tracking-wide">ohmyascii</h1>
+          <Link href="/" className="text-sm font-medium tracking-wide transition-colors hover:text-muted-foreground focus-visible:outline focus-visible:outline-1 focus-visible:outline-dashed focus-visible:-outline-offset-4">
+            ohmyascii
+          </Link>
         </div>
         <p className="hidden flex-1 items-center truncate px-5 text-xs text-muted-foreground xl:flex">
           Turn images, logos, sculptures and whole 2D / 3D scenes into animated ASCII.
@@ -1341,6 +1344,7 @@ export function OhMyAsciiStudio() {
                 current={aiCurrent}
                 onApply={applyAi}
                 handoff={handoffPrompt}
+                autoPrompt={autoPrompt}
                 onCopy={(text) => {
                   copy(text, 'handoff')
                   flash('Prompt copied — paste it into Claude Code running in your terminal')

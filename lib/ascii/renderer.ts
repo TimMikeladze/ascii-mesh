@@ -1,5 +1,6 @@
 import { resolveFontFamily, type AsciiConfig } from './config'
 import type { Model } from './model'
+import { GlyphPlotter, GridLayer, applyTone, hash, lightVector, mixRGB, parseHex, toneIndex, visibleText } from './raster'
 
 export interface FrameState {
   rotX: number
@@ -19,26 +20,6 @@ export interface FrameStats {
   glyphs: number
 }
 
-function hash(n: number): number {
-  n = (n ^ 61) ^ (n >>> 16)
-  n = n + (n << 3)
-  n = n ^ (n >>> 4)
-  n = Math.imul(n, 0x27d4eb2d)
-  n = n ^ (n >>> 15)
-  return (n >>> 0) / 4294967296
-}
-
-function parseHex(hex: string): [number, number, number] {
-  let h = hex.replace('#', '')
-  if (h.length === 3) h = h.split('').map((c) => c + c).join('')
-  const v = parseInt(h.padEnd(6, '0').slice(0, 6), 16)
-  return [(v >> 16) & 255, (v >> 8) & 255, v & 255]
-}
-
-function mix(a: [number, number, number], b: [number, number, number], t: number): string {
-  return `rgb(${Math.round(a[0] + (b[0] - a[0]) * t)},${Math.round(a[1] + (b[1] - a[1]) * t)},${Math.round(a[2] + (b[2] - a[2]) * t)})`
-}
-
 const GRADIENT_STEPS = 24
 
 export class AsciiRenderer {
@@ -47,15 +28,13 @@ export class AsciiRenderer {
   private visCell = new Int32Array(0)
   private visChar = new Int16Array(0)
   private visBucket = new Uint16Array(0)
-  private order = new Int32Array(0)
-  private counts = new Int32Array(4097)
-  private gridCache: HTMLCanvasElement | null = null
-  private gridKey = ''
   private palette: string[] = []
   private paletteKey = ''
   private sourcePalette: (string | undefined)[] = new Array(4096)
   private charsKey = ''
   private chars: string[] = []
+  private grid = new GridLayer()
+  private plotter = new GlyphPlotter()
 
   private last = { cols: 0, rows: 0, vis: 0 }
   private view = { cw: 1, ch: 1, padX: 0, padY: 0, cols: 0, rows: 0, cx: 0, cy: 0, scale: 1, persp: 0, m: new Float64Array(9) }
@@ -103,23 +82,13 @@ export class AsciiRenderer {
   }
 
   invalidate() {
-    this.gridKey = ''
+    this.grid.invalidate()
   }
 
   /** The last rendered frame as plain text, trimmed to the glyphs' bounding box. */
   toText(): string {
     const { cols, rows, vis } = this.last
-    if (!vis) return ''
-    const grid = Array.from({ length: rows }, () => new Array<string>(cols).fill(' '))
-    for (let i = 0; i < vis; i++) {
-      const id = this.visCell[i]
-      grid[(id / cols) | 0][id % cols] = this.chars[this.visChar[i]] ?? ' '
-    }
-    const lines = grid.map((r) => r.join('').replace(/\s+$/, ''))
-    while (lines.length && !lines[0].trim()) lines.shift()
-    while (lines.length && !lines[lines.length - 1].trim()) lines.pop()
-    const indent = Math.min(...lines.filter((l) => l.trim()).map((l) => l.length - l.trimStart().length))
-    return lines.map((l) => l.slice(indent)).join('\n')
+    return visibleText(this.visCell, this.visChar, this.chars, cols, rows, vis)
   }
 
   render(
@@ -145,7 +114,6 @@ export class AsciiRenderer {
       this.visCell = new Int32Array(cells)
       this.visChar = new Int16Array(cells)
       this.visBucket = new Uint16Array(cells)
-      this.order = new Int32Array(cells)
     }
     this.zbuf.fill(-Infinity)
     this.ibuf.fill(-1)
@@ -169,31 +137,7 @@ export class AsciiRenderer {
       ctx.fillRect(0, 0, width, height)
     }
 
-    if (cfg.gridDots && cfg.gridOpacity > 0) {
-      const gridKey = [width, height, dpr, cw, ch, font, cfg.gridChar, cfg.gridColor, cfg.gridOpacity].join('|')
-      if (gridKey !== this.gridKey || !this.gridCache) {
-        const g = this.gridCache ?? document.createElement('canvas')
-        g.width = Math.round(width * dpr)
-        g.height = Math.round(height * dpr)
-        const gctx = g.getContext('2d')!
-        gctx.setTransform(dpr, 0, 0, dpr, 0, 0)
-        gctx.clearRect(0, 0, width, height)
-        gctx.font = font
-        gctx.fillStyle = cfg.gridColor
-        gctx.globalAlpha = cfg.gridOpacity
-        gctx.textAlign = 'center'
-        gctx.textBaseline = 'middle'
-        const gc = Array.from(cfg.gridChar)[0] ?? '.'
-        for (let r = 0; r < rows; r++) {
-          for (let c = 0; c < cols; c++) {
-            gctx.fillText(gc, padX + c * cw + cw / 2, padY + r * ch + ch / 2)
-          }
-        }
-        this.gridCache = g
-        this.gridKey = gridKey
-      }
-      ctx.drawImage(this.gridCache, 0, 0, width, height)
-    }
+    if (cfg.gridDots && cfg.gridOpacity > 0) this.grid.draw(ctx, { width, height, dpr, cw, ch, cols, rows, padX, padY, font, cfg })
 
     if (model.count === 0) {
       this.view.cols = 0
@@ -275,24 +219,7 @@ export class AsciiRenderer {
     }
 
     // Lighting vector in view space
-    let lx: number
-    let ly: number
-    let lz: number
-    if (cfg.pointerLight) {
-      lx = frame.pointerX * 0.95
-      ly = -frame.pointerY * 0.95
-      lz = 0.55
-    } else {
-      const az = cfg.lightAzimuth * d2r
-      const el = cfg.lightElevation * d2r
-      lx = Math.cos(el) * Math.sin(az)
-      ly = Math.sin(el)
-      lz = Math.cos(el) * Math.cos(az)
-    }
-    const ll = Math.hypot(lx, ly, lz) || 1
-    lx /= ll
-    ly /= ll
-    lz /= ll
+    const [lx, ly, lz] = lightVector(cfg, frame.pointerX, frame.pointerY)
 
     const palKey = `${cfg.colorMode}|${cfg.fg}|${cfg.fg2}`
     if (palKey !== this.paletteKey) {
@@ -301,15 +228,12 @@ export class AsciiRenderer {
       const b = parseHex(cfg.fg)
       this.palette = []
       if (cfg.colorMode === 'mono') this.palette.push(cfg.fg)
-      else for (let s = 0; s < GRADIENT_STEPS; s++) this.palette.push(mix(a, b, s / (GRADIENT_STEPS - 1)))
+      else for (let s = 0; s < GRADIENT_STEPS; s++) this.palette.push(mixRGB(a, b, s / (GRADIENT_STEPS - 1)))
     }
 
     const { nrm, lum, col } = model
     const sourceColor = cfg.colorMode === 'source'
     const introOn = cfg.intro > 0 && frame.introProgress < 1
-    const timeBucket = Math.floor(t * 9)
-    const scanOn = cfg.scanStrength > 0
-    const scanPhase = (t * cfg.scanSpeed) % 1
     const invRad = 1 / (2 * rad)
     const bucketCount = sourceColor ? 4096 : cfg.colorMode === 'mono' ? 1 : GRADIENT_STEPS
 
@@ -339,21 +263,8 @@ export class AsciiRenderer {
       const depthN = Math.min(1, Math.max(0, (this.zbuf[id] + rad) * invRad))
       if (cfg.depthFade > 0) v *= 1 - cfg.depthFade * (1 - depthN)
 
-      v = (v - 0.5) * cfg.contrast + 0.5 + cfg.brightness
-      if (scanOn) {
-        const row = (id / cols) | 0
-        const dist = row / rows - scanPhase
-        v += cfg.scanStrength * Math.exp(-(dist * dist) * 220)
-      }
-      v = v < 0 ? 0 : v > 1 ? 1 : v
-      if (cfg.gamma !== 1) v = Math.pow(v, cfg.gamma)
-      if (cfg.invert) v = 1 - v
-
-      let ci = Math.round(v * (nChars - 1))
-      if (cfg.shimmer > 0 && hash(id * 31 + timeBucket * 977) < cfg.shimmer) {
-        ci += hash(id + timeBucket * 13) > 0.5 ? 1 : -1
-        ci = ci < 0 ? 0 : ci >= nChars ? nChars - 1 : ci
-      }
+      v = applyTone(v, (id / cols) | 0, rows, t, cfg)
+      const ci = toneIndex(v, id, t, cfg, nChars)
       if (chars[ci] === ' ') continue
 
       let bucket = 0
@@ -375,38 +286,31 @@ export class AsciiRenderer {
       vis++
     }
 
-    // Counting sort by color bucket so fillStyle changes stay minimal.
-    const counts = this.counts
-    counts.fill(0, 0, bucketCount + 1)
-    for (let i = 0; i < vis; i++) counts[this.visBucket[i] + 1]++
-    for (let b = 0; b < bucketCount; b++) counts[b + 1] += counts[b]
-    for (let i = 0; i < vis; i++) this.order[counts[this.visBucket[i]]++] = i
-
-    ctx.font = font
-    ctx.textAlign = 'center'
-    ctx.textBaseline = 'middle'
-    let lastBucket = -1
-    for (let j = 0; j < vis; j++) {
-      const i = this.order[j]
-      const bucket = this.visBucket[i]
-      if (bucket !== lastBucket) {
-        lastBucket = bucket
-        if (sourceColor) {
-          let s = this.sourcePalette[bucket]
-          if (!s) {
-            s = `rgb(${((bucket >> 8) & 15) * 17},${((bucket >> 4) & 15) * 17},${(bucket & 15) * 17})`
-            this.sourcePalette[bucket] = s
+    this.plotter.draw(ctx, {
+      font,
+      cols,
+      rows,
+      cw,
+      ch,
+      padX,
+      padY,
+      bucketCount,
+      vis,
+      visCell: this.visCell,
+      visChar: this.visChar,
+      visBucket: this.visBucket,
+      glyphs: chars,
+      styleFor: sourceColor
+        ? (bucket) => {
+            let s = this.sourcePalette[bucket]
+            if (!s) {
+              s = `rgb(${((bucket >> 8) & 15) * 17},${((bucket >> 4) & 15) * 17},${(bucket & 15) * 17})`
+              this.sourcePalette[bucket] = s
+            }
+            return s
           }
-          ctx.fillStyle = s
-        } else {
-          ctx.fillStyle = this.palette[bucket]
-        }
-      }
-      const id = this.visCell[i]
-      const c = id % cols
-      const r = (id / cols) | 0
-      ctx.fillText(chars[this.visChar[i]], padX + c * cw + cw / 2, padY + r * ch + ch / 2)
-    }
+        : (bucket) => this.palette[bucket],
+    })
 
     this.last = { cols, rows, vis }
     return { cols, rows, points: count, glyphs: vis }

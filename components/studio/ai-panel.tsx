@@ -41,11 +41,13 @@ export interface AiPanelProps {
   /** Handoff prompt for a coding agent in the user's terminal (lib/ascii/handoff.ts). */
   handoff: (request: string) => string
   onCopy: (text: string) => void
+  /** A prompt handed in from outside (the home page's composer, via /studio?q=): sent once, fresh. */
+  autoPrompt?: string | null
 }
 
 const ENGINE_KEY = 'ohmyascii:ai-engine'
 
-export function AiPanel({ current, onApply, handoff, onCopy }: AiPanelProps) {
+export function AiPanel({ current, onApply, handoff, onCopy, autoPrompt }: AiPanelProps) {
   const [status, setStatus] = useState<AgentStatus | null>(null)
   const [engine, setEngine] = useState<Engine>('gateway')
   // Prefer the user's own Claude Code when the studio runs locally and `claude` is installed.
@@ -89,9 +91,10 @@ export function AiPanel({ current, onApply, handoff, onCopy }: AiPanelProps) {
   }, [turns])
   useEffect(() => () => abortRef.current?.abort(), [])
 
-  const send = async (text: string) => {
+  const send = async (text: string, opts?: { fresh?: boolean }) => {
     const prompt = text.trim()
     if (!prompt || busy) return
+    const startFresh = opts?.fresh ?? fresh
     const history: Turn[] = [...turns, { role: 'user', content: prompt }]
     setTurns([...history, { role: 'assistant', content: '', status: 'streaming' }])
     setDraft('')
@@ -107,7 +110,7 @@ export function AiPanel({ current, onApply, handoff, onCopy }: AiPanelProps) {
       const res = await fetch('/api/generate', {
         method: 'POST',
         headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({ engine, session, messages: history.map(({ role, content }) => ({ role, content })), current: fresh ? undefined : (current() ?? undefined) }),
+        body: JSON.stringify({ engine, session, messages: history.map(({ role, content }) => ({ role, content })), current: startFresh ? undefined : (current() ?? undefined) }),
         signal: ctrl.signal,
       })
       if (!res.ok || !res.body) {
@@ -140,6 +143,15 @@ export function AiPanel({ current, onApply, handoff, onCopy }: AiPanelProps) {
       abortRef.current = null
     }
   }
+
+  // A handoff prompt (home page composer, ?q=) is sent once — after the engine status resolves so
+  // it uses the right engine, and fresh so it ignores whatever world the session restored.
+  const sentAutoRef = useRef(false)
+  useEffect(() => {
+    if (!status || sentAutoRef.current) return
+    sentAutoRef.current = true
+    if (autoPrompt) void send(autoPrompt, { fresh: true })
+  }, [status, autoPrompt, send])
 
   return (
     <div className="flex flex-col gap-3">

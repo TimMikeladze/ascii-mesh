@@ -53,6 +53,10 @@
           "type": "registry:lib"
         },
         {
+          "path": "lib/ascii/raster.ts",
+          "type": "registry:lib"
+        },
+        {
           "path": "lib/ascii/fields.ts",
           "type": "registry:lib"
         }
@@ -119,6 +123,10 @@
           "type": "registry:component"
         },
         {
+          "path": "components/studio/share.ts",
+          "type": "registry:component"
+        },
+        {
           "path": "lib/ascii/presets.ts",
           "type": "registry:lib"
         },
@@ -152,6 +160,10 @@
         },
         {
           "path": "lib/ascii/world-renderer.ts",
+          "type": "registry:lib"
+        },
+        {
+          "path": "lib/ascii/raster.ts",
           "type": "registry:lib"
         },
         {

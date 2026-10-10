@@ -194,10 +194,11 @@
   }
 }
 
-/* Desktop studio is a fixed app shell: only the panel scrolls, never the page. */
+/* The desktop studio is a fixed app shell: only the panel scrolls, never the page (the panel's
+   tall scrollable content would otherwise extend the document). Scoped to pages that render the
+   studio shell so scrolling pages like the chat-first home are unaffected. */
 @media (min-width: 1024px) {
-  html,
-  body {
+  body:has(.studio-shell) {
     height: 100%;
     overflow: hidden;
     overscroll-behavior: none;

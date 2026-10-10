@@ -1,6 +1,8 @@
 # Studio UX pass
 
-- **Share links** — `#s=<base64url JSON>` with config diff + preset/text source. Restored on load. Uploads stay local, so they're dropped from links.
+- **Home** — `/` is a chat-first landing: its composer is a launcher that opens the studio with `?q=<prompt>` (idea chips and the gallery of tuned creations below do the same via `#w=<key>`). The AI panel sends the handoff prompt once, fresh, after the engine status resolves, and the param is stripped from the URL so reloads don't re-send.
+- **Deep links** — `/studio#w=<preset key>` (e.g. `#w=orrery`) opens the studio on a gallery creation: world + its tuned config, source switched to world. Like share links it wins over the saved session and re-applies on `hashchange`.
+- **Share links** — `#s=<base64url JSON>` with config diff + preset/text source. Restored on load. Uploads stay local, so they're dropped from links. Encoding lives in `components/studio/share.ts`.
 - **Keyboard** — space pause, r replay, u upload, c copy code, s share. Ignored while typing or with modifiers.
 - **Paste** — paste an image file or `https://` image URL anywhere to convert it.
 - **Video export** — Export → Video records 5s of the canvas via `MediaRecorder` (WebM, MP4 fallback).

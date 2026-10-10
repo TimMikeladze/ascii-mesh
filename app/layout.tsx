@@ -9,16 +9,16 @@ const spaceMono = Space_Mono({ subsets: ['latin'], weight: ['400', '700'], varia
 const plexMono = IBM_Plex_Mono({ subsets: ['latin'], weight: ['400', '500', '700'], variable: '--font-plex', display: 'swap' })
 
 export const metadata: Metadata = {
-  title: 'ohmyascii — turn any image, SVG or logo into a 3D ASCII animation',
+  title: 'ohmyascii — describe a scene, watch it render in ASCII',
   description:
-    'A studio and React component for turning photos, SVGs, logos and text into rotatable, fully customizable animated ASCII 3D renders.',
+    'Chat an animated ASCII world into existence — or start from a creation in the gallery. A studio and React component for turning photos, SVGs, logos and 3D scenes into rotatable ASCII renders.',
   metadataBase: new URL(process.env.VERCEL_PROJECT_PRODUCTION_URL ? `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}` : 'http://localhost:3000'),
   openGraph: {
     title: 'ohmyascii',
-    description: 'Turn any image, SVG or logo into a rotatable 3D ASCII animation.',
+    description: 'Describe a scene — get a live, rotatable ASCII world. Or start from the gallery.',
     type: 'website',
   },
-  twitter: { card: 'summary_large_image', title: 'ohmyascii', description: 'Turn any image, SVG or logo into a rotatable 3D ASCII animation.' },
+  twitter: { card: 'summary_large_image', title: 'ohmyascii', description: 'Describe a scene — get a live, rotatable ASCII world.' },
 }
 
 export const viewport: Viewport = {

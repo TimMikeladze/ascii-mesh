@@ -1,6 +1,7 @@
 import { resolveFontFamily, type AsciiConfig } from './config'
 import { fieldSampler, type FieldSampler } from './fields'
 import type { Model } from './model'
+import { GlyphPlotter, GridLayer, applyTone, hash, lightVector, parseHex, toneIndex, visibleText } from './raster'
 import type { FrameStats } from './renderer'
 import { deformers, evalCamera, objectInstances, type Field, type World } from './world'
 
@@ -22,22 +23,6 @@ export interface WorldFrame {
   zoomMul: number
   pointerX: number
   pointerY: number
-}
-
-function hash(n: number): number {
-  n = (n ^ 61) ^ (n >>> 16)
-  n = n + (n << 3)
-  n = n ^ (n >>> 4)
-  n = Math.imul(n, 0x27d4eb2d)
-  n = n ^ (n >>> 15)
-  return (n >>> 0) / 4294967296
-}
-
-export function parseHex(hex: string): [number, number, number] {
-  let h = hex.replace('#', '')
-  if (h.length === 3) h = h.split('').map((c) => c + c).join('')
-  const v = parseInt(h.padEnd(6, '0').slice(0, 6), 16) || 0
-  return [(v >> 16) & 255, (v >> 8) & 255, v & 255]
 }
 
 /** Colour ramp sampler over 2+ stops, returns 12-bit bucket for v ∈ [0, 1]. */
@@ -83,20 +68,18 @@ export class WorldRenderer {
   private visCell = new Int32Array(0)
   private visChar = new Int32Array(0)
   private visBucket = new Uint16Array(0)
-  private order = new Int32Array(0)
-  private counts = new Int32Array(4097)
   private palette: (string | undefined)[] = new Array(4096)
   private glyphs: string[] = []
   private glyphKey = ''
   private glyphIndex = new Map<string, { off: number; len: number; cr: number[] }>()
-  private gridCache: HTMLCanvasElement | null = null
-  private gridKey = ''
+  private grid = new GridLayer()
+  private plotter = new GlyphPlotter()
   private slots: Slot[] = []
   private last = { cols: 0, rows: 0, vis: 0 }
   private view = { cw: 1, ch: 1, padX: 0, padY: 0, cols: 0, rows: 0, cx: 0, cy: 0, scale: 1, fov: 0, fit: 1, m: new Float64Array(9), panX: 0, panY: 0 }
 
   invalidate() {
-    this.gridKey = ''
+    this.grid.invalidate()
   }
 
   /** World index of the object drawn at canvas pixel (x, y) in the last frame (±1 cell), or -1. */
@@ -136,17 +119,7 @@ export class WorldRenderer {
   /** The last rendered frame as plain text, trimmed to its bounding box. */
   toText(): string {
     const { cols, rows, vis } = this.last
-    if (!vis) return ''
-    const grid = Array.from({ length: rows }, () => new Array<string>(cols).fill(' '))
-    for (let i = 0; i < vis; i++) {
-      const id = this.visCell[i]
-      grid[(id / cols) | 0][id % cols] = this.glyphs[this.visChar[i]] ?? ' '
-    }
-    const lines = grid.map((r) => r.join('').replace(/\s+$/, ''))
-    while (lines.length && !lines[0].trim()) lines.shift()
-    while (lines.length && !lines[lines.length - 1].trim()) lines.pop()
-    const indent = Math.min(...lines.filter((l) => l.trim()).map((l) => l.length - l.trimStart().length))
-    return lines.map((l) => l.slice(indent)).join('\n')
+    return visibleText(this.visCell, this.visChar, this.glyphs, cols, rows, vis)
   }
 
   private charset(set: string) {
@@ -196,7 +169,6 @@ export class WorldRenderer {
       this.visCell = new Int32Array(cells)
       this.visChar = new Int32Array(cells)
       this.visBucket = new Uint16Array(cells)
-      this.order = new Int32Array(cells)
     }
     this.zbuf.fill(-Infinity)
     this.sbuf.fill(-1)
@@ -213,7 +185,7 @@ export class WorldRenderer {
       ctx.fillStyle = cfg.bg
       ctx.fillRect(0, 0, width, height)
     }
-    if (cfg.gridDots && cfg.gridOpacity > 0) this.drawGrid(ctx, width, height, dpr, cw, ch, cols, rows, padX, padY, font, cfg)
+    if (cfg.gridDots && cfg.gridOpacity > 0) this.grid.draw(ctx, { width, height, dpr, cw, ch, cols, rows, padX, padY, font, cfg })
 
     // ---- camera ----
     const t = frame.time
@@ -349,24 +321,7 @@ export class WorldRenderer {
     this.slots = slots
 
     // ---- light ----
-    let lx: number
-    let ly: number
-    let lz: number
-    if (cfg.pointerLight) {
-      lx = frame.pointerX * 0.95
-      ly = -frame.pointerY * 0.95
-      lz = 0.55
-    } else {
-      const az = cfg.lightAzimuth * d2r
-      const el = cfg.lightElevation * d2r
-      lx = Math.cos(el) * Math.sin(az)
-      ly = Math.sin(el)
-      lz = Math.cos(el) * Math.cos(az)
-    }
-    const ll = Math.hypot(lx, ly, lz) || 1
-    lx /= ll
-    ly /= ll
-    lz /= ll
+    const [lx, ly, lz] = lightVector(cfg, frame.pointerX, frame.pointerY)
 
     // ---- fields ----
     const half = Math.min(width, height) / 2
@@ -377,7 +332,6 @@ export class WorldRenderer {
       const entry = { f, s: fieldSampler(f, t, rows, cw / half), ramp: rampBuckets(f.colors.length >= 2 ? f.colors : [f.colors[0] ?? '#000000', f.colors[0] ?? '#ffffff']), cs: this.charset(f.charset) }
       ;(f.layer === 'front' ? front : back).push(entry)
     }
-    const timeBucket = Math.floor(t * 9)
     const fieldTimeBucket = Math.floor(t * 12)
     const sampleField = (list: typeof back, id: number, c: number, r: number, out: { ch: number; bucket: number }): boolean => {
       const x = (padX + c * cw + cw / 2 - width / 2) / half
@@ -406,8 +360,6 @@ export class WorldRenderer {
 
     // ---- shade winners + compose ----
     const introOn = cfg.intro > 0 && frame.introProgress < 1
-    const scanOn = cfg.scanStrength > 0
-    const scanPhase = (t * cfg.scanSpeed) % 1
     const invFit = 1 / (2 * fit)
     const fieldOut = { ch: 0, bucket: 0 }
     let vis = 0
@@ -445,19 +397,8 @@ export class WorldRenderer {
         let val = st.emissive > 0 ? litV * (1 - st.emissive) + m.lum[pi] * st.emissive : litV
         const depthN = Math.min(1, Math.max(0, (zbuf[id] + fit) * invFit))
         if (cfg.depthFade > 0) val *= 1 - cfg.depthFade * (1 - depthN)
-        val = (val - 0.5) * cfg.contrast + 0.5 + cfg.brightness
-        if (scanOn) {
-          const dist = r / rows - scanPhase
-          val += cfg.scanStrength * Math.exp(-(dist * dist) * 220)
-        }
-        val = val < 0 ? 0 : val > 1 ? 1 : val
-        if (cfg.gamma !== 1) val = Math.pow(val, cfg.gamma)
-        if (cfg.invert) val = 1 - val
-        let ci = Math.round(val * (st.len - 1))
-        if (cfg.shimmer > 0 && hash(id * 31 + timeBucket * 977) < cfg.shimmer) {
-          ci += hash(id + timeBucket * 13) > 0.5 ? 1 : -1
-          ci = ci < 0 ? 0 : ci >= st.len ? st.len - 1 : ci
-        }
+        val = applyTone(val, r, rows, t, cfg)
+        const ci = toneIndex(val, id, t, cfg, st.len)
         gi = st.off + ci
         let cr: number
         let cg: number
@@ -495,71 +436,24 @@ export class WorldRenderer {
       vis++
     }
 
-    // Counting sort by colour so fillStyle changes stay minimal.
-    const counts = this.counts
-    counts.fill(0)
-    for (let i = 0; i < vis; i++) counts[this.visBucket[i] + 1]++
-    for (let b = 0; b < 4096; b++) counts[b + 1] += counts[b]
-    for (let i = 0; i < vis; i++) this.order[counts[this.visBucket[i]]++] = i
-
-    ctx.font = font
-    ctx.textAlign = 'center'
-    ctx.textBaseline = 'middle'
-    let lastBucket = -1
-    for (let j = 0; j < vis; j++) {
-      const i = this.order[j]
-      const b = this.visBucket[i]
-      if (b !== lastBucket) {
-        lastBucket = b
-        let s = this.palette[b]
-        if (!s) {
-          s = `rgb(${((b >> 8) & 15) * 17},${((b >> 4) & 15) * 17},${(b & 15) * 17})`
-          this.palette[b] = s
-        }
-        ctx.fillStyle = s
-      }
-      const id = this.visCell[i]
-      const c = id % cols
-      const r = (id / cols) | 0
-      ctx.fillText(glyphs[this.visChar[i]], padX + c * cw + cw / 2, padY + r * ch + ch / 2)
-    }
+    this.plotter.draw(ctx, {
+      font,
+      cols,
+      rows,
+      cw,
+      ch,
+      padX,
+      padY,
+      bucketCount: 4096,
+      vis,
+      visCell: this.visCell,
+      visChar: this.visChar,
+      visBucket: this.visBucket,
+      glyphs,
+      styleFor: (b) => (this.palette[b] ??= `rgb(${((b >> 8) & 15) * 17},${((b >> 4) & 15) * 17},${(b & 15) * 17})`),
+    })
 
     this.last = { cols, rows, vis }
     return { cols, rows, points, glyphs: vis }
-  }
-
-  private drawGrid(
-    ctx: CanvasRenderingContext2D,
-    width: number,
-    height: number,
-    dpr: number,
-    cw: number,
-    ch: number,
-    cols: number,
-    rows: number,
-    padX: number,
-    padY: number,
-    font: string,
-    cfg: AsciiConfig,
-  ) {
-    const key = [width, height, dpr, cw, ch, font, cfg.gridChar, cfg.gridColor, cfg.gridOpacity].join('|')
-    if (key !== this.gridKey || !this.gridCache) {
-      const g = this.gridCache ?? document.createElement('canvas')
-      g.width = Math.round(width * dpr)
-      g.height = Math.round(height * dpr)
-      const gctx = g.getContext('2d')!
-      gctx.setTransform(dpr, 0, 0, dpr, 0, 0)
-      gctx.clearRect(0, 0, width, height)
-      gctx.font = font
-      gctx.fillStyle = cfg.gridColor
-      gctx.globalAlpha = cfg.gridOpacity
-      gctx.textAlign = 'center'
-      gctx.textBaseline = 'middle'
-      const gc = Array.from(cfg.gridChar)[0] ?? '.'
-      for (let r = 0; r < rows; r++) for (let c = 0; c < cols; c++) gctx.fillText(gc, padX + c * cw + cw / 2, padY + r * ch + ch / 2)
-      this.gridCache = g
-      this.gridKey = key
-    }
-    ctx.drawImage(this.gridCache, 0, 0, width, height)
   }
 }

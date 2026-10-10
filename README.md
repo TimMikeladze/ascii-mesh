@@ -1,6 +1,6 @@
 # ohmyascii
 
-Turn any photo, SVG, logo or text — a 3D shape you model, sculpt and paint yourself, or a whole animated 2D / 3D scene you compose (or describe to an AI) — into a rotatable, animated ASCII render. Ships as a studio app and as shadcn registry items.
+Turn any photo, SVG, logo or text — a 3D shape you model, sculpt and paint yourself, or a whole animated 2D / 3D scene you compose (or describe to an AI) — into a rotatable, animated ASCII render. The home page is a chat: describe a scene and watch it render live, then continue in the studio. Ships as a studio app and as shadcn registry items.
 
 ## Run
 
@@ -9,6 +9,12 @@ pnpm install
 pnpm dev            # pass -p <port> if 3000 is taken
 pnpm test           # vitest: modelling, worlds (animation, geometry, fields, renderer), AI reply parsing
 ```
+
+## The site
+
+- **`/`** — a chat-first landing. The composer is a launcher: describe a scene and the studio opens with the AI art director already building it; keep chatting there to refine it ("make it snow").
+- **Gallery** — under the home composer, 20 tuned scenes, the 7 built-in marks and type examples each render as a live card; clicking one opens the studio on it.
+- **`/studio`** — the full studio (everything below), where the AI chat lives. Deep links: `/studio?q=<prompt>` starts a fresh AI scene, `/studio#w=<preset key>` (e.g. `#w=orrery`) opens a gallery creation, `/studio#s=…` share links restore config + source + world.
 
 AI scene generation (optional) has two engines:
 
@@ -71,7 +77,7 @@ How it works: every shape and sculpt dab is a signed distance function; the scen
 
 Source → **Compose a 2D / 3D scene** switches to a *world*: many objects, each with its own geometry, colours, glyphs and animation, over generative backgrounds, seen through an animated camera.
 
-- **Gallery** — 13 tuned scenes to start from: Orrery, Ocean sunset, Koi pond (2D), Aurora peaks, Galaxy, Double helix, Campfire, Warp tunnel, Zen garden, Neon rain, Lotus mandala (2D), Jellyfish, Synthwave.
+- **Gallery** — 20 tuned scenes to start from: Orrery, Ocean sunset, Koi pond (2D), Aurora peaks, Galaxy, Double helix, Campfire, Warp tunnel, Zen garden, Neon rain, Lotus mandala (2D), Jellyfish, Synthwave, Lighthouse storm, Black hole, Firefly grove, Winter village, Earthrise, Balloon dawn, Glyph rain.
 - **Objects** — solids, 2D shapes (circle, ring, star, polygon, heart, moon, petal…, with pillow bevels), text, images, tubes along curves (helix, knot, lissajous, spiral), terrain (hills, mountains, dunes, a live ocean), particles (stars, snow, rain, fireflies, embers, galaxy, planetary ring, dust) and anything built in the modeller (**+ Modelled object**).
 - **Material** — lit and shadow colour, per-object glyph ramp, self-lit amount, colour by height (sunsets, flames).
 - **Animation** — spin, orbit, bob, pulse, sway, drift, keyframes, plus wave / twist deformers; stack as many as you like. **Arrays** repeat an object in rings, rows and spirals with staggered timing (`phase`) and random heights (`jitter`).
@@ -89,7 +95,7 @@ import world from './sunset.world.json'
 
 ### Generate with AI
 
-The **Generate with AI** section is a chat with an art director: describe a scene ("a lighthouse on a cliff in a storm") and it streams back a world and look, applied as one undo step. Follow-ups ("make it snow", "add a second moon") edit the scene on screen. Pick **Claude Code (local)** or **AI Gateway** at the top of the section. **Copy for Claude Code in your terminal** copies a handoff prompt instead ("Use the ohmyascii-studio skill…" + the open piece or the scene JSON + your request) for an agent that edits piece files while the studio renders them — the robocn pattern, see `docs/local-claude.md`. `app/api/generate/route.ts` streams from the AI Gateway; `lib/ascii/world-prompt.ts` holds the instructions and the tolerant reply parser. Details: `docs/worlds.md`.
+The **Generate with AI** section is a chat with an art director: describe a scene ("a lighthouse on a cliff in a storm") and it streams back a world and look, applied as one undo step. Follow-ups ("make it snow", "add a second moon") edit the scene on screen. The home page's chat speaks the same protocol with the same engines. Pick **Claude Code (local)** or **AI Gateway** at the top of the section. **Copy for Claude Code in your terminal** copies a handoff prompt instead ("Use the ohmyascii-studio skill…" + the open piece or the scene JSON + your request) for an agent that edits piece files while the studio renders them — the robocn pattern, see `docs/local-claude.md`. `app/api/generate/route.ts` streams from the AI Gateway; `lib/ascii/world-prompt.ts` holds the instructions and the tolerant reply parser. Details: `docs/worlds.md`.
 
 ## Build with an agent (folder mode)
 

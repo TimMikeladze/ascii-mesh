@@ -375,6 +375,182 @@ export const WORLD_PRESETS: WorldPreset[] = [
       ],
     }),
   },
+  {
+    key: 'lighthouse',
+    label: 'Lighthouse storm',
+    blurb: 'A lighthouse sweeps twin beams over a heavy sea as the rain comes in sideways.',
+    config: { ...BASE, bg: '#060a14', charset: ' .:-=+*#%@', lightAzimuth: 150, lightElevation: 30, ambient: 0.3, depthFade: 0.2, cellSize: 6 },
+    world: () => ({
+      name: 'Lighthouse storm',
+      duration: 16,
+      fit: 1.05,
+      camera: { rot: [-10, 0, 0], zoom: 1, fov: 0.3, pan: [0.05, 0.1], anim: [b('sway', { axis: 'y', amp: 6, speed: 1 / 16 })] },
+      fields: [
+        f('gradient', { charset: ' .·:', colors: ['#060a14', '#14203a', '#31435e'], angle: 90, scale: 0.8, intensity: 0.45 }),
+        f('stars', { colors: ['#2a3448', '#c9d6ea'], scale: 0.7 }),
+        f('rain', { layer: 'front', charset: ' .:/|', colors: ['#0a1220', '#5a7ab0', '#cfe0f5'], random: false, intensity: 0.45, speed: 2.6, scale: 0.4, angle: 68 }),
+      ],
+      objects: [
+        o('terrain', { type: 'ocean', amp: 0.06, freq: 5.5, speed: 1.4, seed: 6 }, { name: 'Sea', pos: v3(0.4, -0.62, -0.5), scale: v3(7, 1, 3.4), color: '#7a9cc0', shadow: '#0a1626', charset: ' .·-~≈' }),
+        o('shape', { type: 'sphere' }, { name: 'Rock', pos: v3(-0.72, -0.5, 0.25), scale: v3(0.62, 0.3, 0.45), color: '#3c4450', shadow: '#0a0e16', charset: ' .:-#' }),
+        o('shape', { type: 'sphere' }, { name: 'Rock 2', pos: v3(-0.32, -0.6, 0.6), scale: v3(0.3, 0.16, 0.24), color: '#333b46', shadow: '#0a0e16', charset: ' .:-#' }),
+        o('shape', { type: 'cylinder' }, { name: 'Tower', pos: v3(-0.72, -0.05, 0.25), scale: v3(0.13, 0.85, 0.13), color: '#f4f0e6', shadow: '#5a6070', charset: '-=+*#%' }),
+        o('shape', { type: 'cylinder' }, { name: 'Band', pos: v3(-0.72, 0.08, 0.25), scale: v3(0.14, 0.12, 0.14), color: '#c0392b', shadow: '#3a0e0a', charset: '#%@*' }),
+        o('shape', { type: 'cylinder' }, { name: 'Lamp', pos: v3(-0.72, 0.44, 0.25), scale: v3(0.09, 0.1, 0.09), color: '#ffe9a8', shadow: '#a87414', emissive: 1, charset: '#%@' }),
+        o('shape', { type: 'cone' }, { name: 'Roof', pos: v3(-0.72, 0.53, 0.25), scale: v3(0.12, 0.1, 0.12), color: '#8a2f28', shadow: '#2a0c08', charset: '#' }),
+        o('flat', { type: 'triangle', bevel: 0 }, { name: 'Beams', pos: v3(-0.72, 0.44, 0.25), rot: v3(-90, 0, 0), scale: v3(0.36, 1.5, 1), color: '#ffe9a8', shadow: '#4a4030', emissive: 0.85, charset: ' .:-', array: arr({ count: 2, rot: v3(0, 180, 0), spin: 55 }) }),
+      ],
+    }),
+  },
+  {
+    key: 'blackhole',
+    label: 'Black hole',
+    blurb: 'An event horizon silhouette inside a spinning accretion disk and photon ring.',
+    config: { ...BASE, bg: '#010104', charset: ' .·:-=+*#%@', lightAzimuth: 0, lightElevation: 10, ambient: 0.1, depthFade: 0.35, shimmer: 0.04 },
+    world: () => ({
+      name: 'Black hole',
+      duration: 20,
+      fit: 1.5,
+      camera: { rot: [-16, 0, 0], zoom: 1, fov: 0.3, pan: [0, 0], anim: [b('sway', { axis: 'y', amp: 12, speed: 1 / 20 })] },
+      fields: [f('stars', { colors: ['#2a2a3a', '#ffffff'], scale: 1.3 })],
+      objects: [
+        o('shape', { type: 'sphere' }, { name: 'Horizon', scale: u(0.32), color: '#04040a', shadow: '#000000', charset: ' ' }),
+        o('flat', { type: 'ring', inner: 0.9, bevel: 0 }, { name: 'Photon ring', scale: u(0.36), color: '#fff2d0', shadow: '#c07a20', emissive: 1, charset: '#%@' }),
+        o('flat', { type: 'ring', inner: 0.55, bevel: 0.05 }, { name: 'Disk', rot: v3(-72, 0, 0), scale: u(2.3), color: '#ffcf8a', shadow: '#7a2408', emissive: 0.75, tint: 'height', charset: ' .·:-=+*#%', anim: [b('spin', { axis: 'z', speed: 16 })] }),
+        o('particles', { type: 'ring', count: 2200, speed: 1.6, seed: 5 }, { name: 'Disk spray', rot: v3(-72, 0, 0), scale: u(2.6), color: '#ffd9a0', shadow: '#4a1606', charset: ' .·*', emissive: 1 }),
+        o('flat', { type: 'ring', inner: 0.76, bevel: 0 }, { name: 'Inner heat', rot: v3(-72, 0, 0), scale: u(1.15), color: '#ffffff', shadow: '#ff9a3d', emissive: 1, charset: '#%@', anim: [b('spin', { axis: 'z', speed: 30 })] }),
+      ],
+    }),
+  },
+  {
+    key: 'forest',
+    label: 'Firefly grove',
+    blurb: 'Moonlit pines over dark moss and a hundred drifting fireflies.',
+    config: { ...BASE, bg: '#02080e', charset: ' .:-=+*#%@', lightAzimuth: -30, lightElevation: 55, ambient: 0.32, depthFade: 0.2 },
+    world: () => ({
+      name: 'Firefly grove',
+      duration: 18,
+      fit: 1.35,
+      camera: { rot: [-14, 0, 0], zoom: 1, fov: 0.3, pan: [0, 0.05], anim: [b('sway', { axis: 'y', amp: 8, speed: 1 / 18 })] },
+      fields: [
+        f('gradient', { charset: ' .·', colors: ['#02080e', '#0a1c2e', '#1e3a50'], angle: 90, scale: 0.85, intensity: 0.45 }),
+        f('stars', { colors: ['#24344a', '#dceaff'], scale: 0.9 }),
+        f('noise', { charset: ' .·', colors: ['#06121c', '#14344a'], intensity: 0.3, scale: 1.6, speed: 0.25 }),
+      ],
+      objects: [
+        o('terrain', { type: 'dunes', amp: 0.05, freq: 9, seed: 4 }, { name: 'Moss', pos: v3(0, -0.5, 0), scale: v3(5, 1, 2.4), color: '#12331f', shadow: '#020c06', charset: ' .,:' }),
+        o('shape', { type: 'cone' }, { name: 'Far pines', pos: v3(-1.9, -0.28, -1.4), scale: v3(0.34, 0.9, 0.34), color: '#1c5034', shadow: '#04180c', charset: '.:;+*', array: arr({ count: 9, step: v3(0.5, 0, 0), jitter: 0.5 }) }),
+        o('shape', { type: 'cone' }, { name: 'Pines', pos: v3(-2.1, -0.2, 0.2), scale: v3(0.5, 1.35, 0.5), color: '#2f8a52', shadow: '#0a2a16', charset: ':;+*#%', array: arr({ count: 8, step: v3(0.62, 0, 0), jitter: 0.6 }) }),
+        o('shape', { type: 'cone' }, { name: 'Pine', pos: v3(1.5, -0.12, 0.9), scale: v3(0.62, 1.7, 0.62), color: '#3a9e60', shadow: '#0c3018', charset: ':;+*#%' }),
+        o('flat', { type: 'circle', bevel: 0 }, { name: 'Moon', pos: v3(1.35, 0.75, -2.2), scale: u(0.34), color: '#eaf4ff', shadow: '#8ab0d0', emissive: 1, charset: '#%@' }),
+        o('particles', { type: 'fireflies', count: 160, speed: 1, seed: 7 }, { name: 'Fireflies', pos: v3(0, 0.05, 0), scale: v3(4.4, 1.6, 1.6), color: '#e8ffa8', shadow: '#9ab84a', charset: '*+@', emissive: 1 }),
+      ],
+    }),
+  },
+  {
+    key: 'village',
+    label: 'Winter village',
+    blurb: 'Snow-bound cabins with warm windows under pines loaded with snow.',
+    config: { ...BASE, bg: '#050a18', charset: ' .:-=+*#%@', lightAzimuth: -50, lightElevation: 45, ambient: 0.18, depthFade: 0.25, cellSize: 6 },
+    world: () => {
+      const cabin = (x: number, y: number, z: number, s: number): WObject[] => [
+        o('shape', { type: 'box' }, { name: 'Walls', pos: v3(x, y, z), scale: v3(0.42 * s, 0.26 * s, 0.34 * s), color: '#7a5a40', shadow: '#1c120a', charset: ' .:-#' }),
+        o('shape', { type: 'box' }, { name: 'Roof L', pos: v3(x - 0.13 * s, y + 0.2 * s, z), rot: v3(0, 0, 42), scale: v3(0.4 * s, 0.05 * s, 0.42 * s), color: '#eef4fb', shadow: '#4a5870', charset: ' .:-' }),
+        o('shape', { type: 'box' }, { name: 'Roof R', pos: v3(x + 0.13 * s, y + 0.2 * s, z), rot: v3(0, 0, -42), scale: v3(0.4 * s, 0.05 * s, 0.42 * s), color: '#e6eef8', shadow: '#44526a', charset: ' .:-' }),
+        o('shape', { type: 'box' }, { name: 'Chimney', pos: v3(x + 0.13 * s, y + 0.32 * s, z), scale: v3(0.05 * s, 0.14 * s, 0.05 * s), color: '#5a4636', shadow: '#160e08', charset: ':#' }),
+        o('flat', { type: 'rect', bevel: 0 }, { name: 'Window', pos: v3(x - 0.06 * s, y + 0.01 * s, z + 0.18 * s), scale: v3(0.1 * s, 0.09 * s, 1), color: '#ffcf6e', shadow: '#8a5a10', emissive: 1, charset: '#' }),
+        o('flat', { type: 'rect', bevel: 0 }, { name: 'Window 2', pos: v3(x + 0.1 * s, y + 0.01 * s, z + 0.18 * s), scale: v3(0.07 * s, 0.09 * s, 1), color: '#ffcf6e', shadow: '#8a5a10', emissive: 1, charset: '#' }),
+      ]
+      return {
+        name: 'Winter village',
+        duration: 20,
+        fit: 1.4,
+        camera: { rot: [-16, 0, 0], zoom: 1, fov: 0.3, pan: [0, 0.08], anim: [b('sway', { axis: 'y', amp: 7, speed: 1 / 20 })] },
+        fields: [
+          f('gradient', { charset: ' .·', colors: ['#050a18', '#0c1830', '#22344f'], angle: 90, scale: 0.85, intensity: 0.85 }),
+          f('stars', { colors: ['#2c3c58', '#ffffff'], scale: 1 }),
+        ],
+        objects: [
+          o('terrain', { type: 'dunes', amp: 0.035, freq: 7, seed: 8 }, { name: 'Snowfield', pos: v3(0, -0.55, 0), scale: v3(6, 1, 2.6), color: '#dce8f5', shadow: '#243248', charset: ' .·:-' }),
+          ...cabin(-0.85, -0.32, 0.35, 1),
+          ...cabin(0.25, -0.36, -0.5, 0.78),
+          ...cabin(1.1, -0.3, 0.6, 0.62),
+          o('shape', { type: 'cone' }, { name: 'Snow pines', pos: v3(-2.15, -0.18, -0.2), scale: v3(0.44, 1.2, 0.44), color: '#e8f2f8', shadow: '#1a4a34', tint: 'height', charset: ' .:;#', array: arr({ count: 7, step: v3(0.55, 0, 0), jitter: 0.55 }) }),
+          o('shape', { type: 'cone' }, { name: 'Pine', pos: v3(1.9, -0.14, 0.4), scale: v3(0.5, 1.4, 0.5), color: '#dce8f4', shadow: '#16402c', tint: 'height', charset: ' .:;#' }),
+          o('flat', { type: 'circle', bevel: 0 }, { name: 'Moon', pos: v3(-1.35, 0.68, -2), scale: u(0.42), color: '#f2f6ff', shadow: '#9ab4d4', emissive: 1, charset: '#%@' }),
+          o('particles', { type: 'snow', count: 700, speed: 0.9, seed: 11 }, { name: 'Snowfall', pos: v3(0, 0.15, 0.3), scale: v3(4.6, 1.9, 1.6), color: '#ffffff', shadow: '#3a4a66', charset: ' ..·*' }),
+        ],
+      }
+    },
+  },
+  {
+    key: 'earthrise',
+    label: 'Earthrise',
+    blurb: 'A living blue Earth hanging over grey regolith, in a dense star field.',
+    config: { ...BASE, bg: '#01020a', charset: ' .:-=+*#%@', lightAzimuth: 30, lightElevation: 40, ambient: 0.1, depthFade: 0.3 },
+    world: () => ({
+      name: 'Earthrise',
+      duration: 24,
+      fit: 1.3,
+      camera: { rot: [-14, 0, 0], zoom: 1, fov: 0.3, pan: [0, 0.1], anim: [b('sway', { axis: 'y', amp: 10, speed: 1 / 24 })] },
+      fields: [f('stars', { colors: ['#2a2a3a', '#ffffff'], scale: 1.4 })],
+      objects: [
+        o('terrain', { type: 'dunes', amp: 0.05, freq: 6, seed: 9 }, { name: 'Regolith', pos: v3(0, -0.62, 0.3), scale: v3(6.4, 1, 2.2), color: '#b8bcc6', shadow: '#1a1c26', charset: ' .·:-=' }),
+        o('shape', { type: 'sphere' }, { name: 'Earth', pos: v3(0.5, 0.6, -2.6), scale: u(0.85), color: '#5ab4f0', shadow: '#0a2c58', emissive: 0.35, charset: ' .·:-=+*#%@' }),
+        o('shape', { type: 'sphere' }, { name: 'Land', pos: v3(0.5, 0.6, -2.6), scale: v3(0.5, 0.3, 0.5), color: '#3aa06a', shadow: '#0a3a20', emissive: 0.3, charset: ' .:-#', anim: [b('orbit', { radius: 0.35, speed: 6, tilt: 18, phase: 40 })] }),
+        o('shape', { type: 'sphere' }, { name: 'Land 2', pos: v3(0.5, 0.6, -2.6), scale: v3(0.34, 0.22, 0.34), color: '#4ab47a', shadow: '#0a3a20', emissive: 0.3, charset: ' .:-#', anim: [b('orbit', { radius: 0.3, speed: 6, tilt: -24, phase: 210 })] }),
+        o('shape', { type: 'sphere' }, { name: 'Clouds', pos: v3(0.5, 0.6, -2.6), scale: v3(0.55, 0.18, 0.55), color: '#ffffff', shadow: '#8ab0d0', emissive: 0.5, charset: ' .·', anim: [b('orbit', { radius: 0.52, speed: 4, tilt: 8, phase: 120 })] }),
+      ],
+    }),
+  },
+  {
+    key: 'balloons',
+    label: 'Balloon dawn',
+    blurb: 'Hot air balloons in two-tone enamel drifting over golden hills at sunrise.',
+    config: { ...BASE, bg: '#160a1e', charset: ' .:-=+*#%@', lightAzimuth: 170, lightElevation: 25, ambient: 0.22, depthFade: 0.25, cellSize: 6 },
+    world: () => {
+      const balloon = (x: number, y: number, z: number, s: number, top: string, bottom: string, phase: number): WObject[] => [
+        o('shape', { type: 'sphere' }, { name: 'Envelope', pos: v3(x, y, z), scale: v3(0.5 * s, 0.56 * s, 0.5 * s), color: top, shadow: bottom, tint: 'height', charset: ' .:-=+*#%', anim: [b('bob', { amp: 0.05, speed: 1 / 9, phase }), b('sway', { axis: 'z', amp: 4, speed: 1 / 12, phase })] }),
+        o('shape', { type: 'box' }, { name: 'Basket', pos: v3(x, y - 0.52 * s, z), scale: v3(0.09 * s, 0.07 * s, 0.09 * s), color: '#8a5a34', shadow: '#241206', charset: '#', anim: [b('bob', { amp: 0.05, speed: 1 / 9, phase }), b('sway', { axis: 'z', amp: 4, speed: 1 / 12, phase })] }),
+      ]
+      return {
+        name: 'Balloon dawn',
+        duration: 20,
+        fit: 1.35,
+        camera: { rot: [-10, 0, 0], zoom: 1, fov: 0.3, pan: [0, 0.12], anim: [b('sway', { axis: 'y', amp: 8, speed: 1 / 20 })] },
+        fields: [
+          f('gradient', { charset: ' .·:-', colors: ['#160a1e', '#5a2a4e', '#e08a5a', '#ffd9a0'], angle: -90, scale: 0.9, intensity: 1 }),
+          f('stars', { colors: ['#4a2c5a', '#ffe6d0'], scale: 0.6 }),
+        ],
+        objects: [
+          o('terrain', { type: 'hills', amp: 0.16, freq: 2.4, seed: 5 }, { name: 'Hills', pos: v3(0, -0.62, -0.6), scale: v3(7, 1, 3), color: '#c99a6a', shadow: '#3a1c30', tint: 'height', charset: ' .·:-=' }),
+          o('flat', { type: 'circle', bevel: 0 }, { name: 'Sun', pos: v3(0.75, 0.24, -2.6), scale: u(0.6), color: '#fff0c4', shadow: '#ff6a3d', emissive: 1, charset: '#%@', anim: [b('bob', { amp: 0.04, speed: 1 / 20 })] }),
+          ...balloon(-0.85, 0.3, -0.4, 1, '#e85a4f', '#5a1408', 0),
+          ...balloon(0.15, 0.5, -1.1, 0.8, '#3ec6b8', '#0a3a34', 0.3),
+          ...balloon(0.95, 0.15, 0.2, 1.1, '#c99aff', '#3a1466', 0.6),
+          ...balloon(-0.1, -0.05, 0.6, 0.65, '#ffcf6e', '#6a3a0a', 0.15),
+          o('flat', { type: 'circle', bevel: 0.4 }, { name: 'Clouds', pos: v3(-1.7, 0.8, -1.8), scale: v3(0.9, 0.15, 1), color: '#ffb8a0', shadow: '#4a1e3a', charset: ' .:-=', array: arr({ count: 3, step: v3(1.5, -0.08, 0), grow: 0.8 }), anim: [b('drift', { vel: v3(0.04, 0, 0), wrap: 3 })] }),
+        ],
+      }
+    },
+  },
+  {
+    key: 'matrix',
+    label: 'Glyph rain',
+    blurb: 'A wall of falling glyphs and one blinking prompt. Flat, green, endless.',
+    config: { ...BASE, bg: '#020806', charset: ' .:-=+*#%@', lightAzimuth: 0, lightElevation: 60, ambient: 0.3, depthFade: 0, cellSize: 6 },
+    world: () => ({
+      name: 'Glyph rain',
+      duration: 10,
+      fit: 1.2,
+      camera: { rot: [0, 0, 0], zoom: 1, fov: 0, pan: [0, 0], anim: [] },
+      fields: [f('rain', { charset: ' ｱｲｳｴｵｶｷｸｹｺｻｼｽ01<>/#$%', colors: ['#03180c', '#1e8a4a', '#7dff9a', '#d8ffe6'], intensity: 1.1, speed: 1.6, scale: 0.5 })],
+      objects: [
+        o('text', { text: 'WAKE UP', fontKey: 'jetbrains', weight: 800, depth: 0.12 }, { name: 'Prompt', pos: v3(0, 0.08, 0), scale: v3(0.95, 0.34, 1), color: '#b8ffcf', shadow: '#0a3a1c', emissive: 1, charset: '#%@' }),
+        o('text', { text: '_', fontKey: 'jetbrains', weight: 800, depth: 0 }, { name: 'Cursor', pos: v3(0.72, -0.09, 0.1), scale: v3(0.16, 0.26, 1), color: '#7dff9a', emissive: 1, charset: '#', anim: [b('keys', { loop: 1.2, ease: 'linear', keys: [{ t: 0, scale: 1 }, { t: 0.55, scale: 1 }, { t: 0.56, scale: 0.05 }, { t: 1.19, scale: 0.05 }] })] }),
+      ],
+    }),
+  },
 ]
 
 export function getWorldPreset(key: string): WorldPreset | undefined {
