@@ -551,6 +551,156 @@ export const WORLD_PRESETS: WorldPreset[] = [
       ],
     }),
   },
+  {
+    key: 'volcano',
+    label: 'Volcano',
+    blurb: 'A cone of black rock spitting embers into a smoke-red night.',
+    config: { ...BASE, bg: '#0c0404', charset: ' .:-=+*#%@', lightAzimuth: 20, lightElevation: 35, ambient: 0.28, depthFade: 0.25 },
+    world: () => ({
+      name: 'Volcano',
+      duration: 14,
+      fit: 1.2,
+      camera: { rot: [-12, 0, 0], zoom: 1, fov: 0.3, pan: [0, 0.05], anim: [b('sway', { axis: 'y', amp: 10, speed: 1 / 14 })] },
+      fields: [
+        f('gradient', { charset: ' .·:', colors: ['#0c0404', '#3a0e08', '#7a2410'], angle: -90, scale: 0.9, intensity: 0.6 }),
+        f('fire', { charset: ' .:*#', colors: ['#1a0604', '#ff5a1e', '#ffd27a'], intensity: 0.3, scale: 0.6, speed: 1.2 }),
+      ],
+      objects: [
+        o('shape', { type: 'cone' }, { name: 'Cone', pos: v3(0, -0.3, 0), scale: v3(1.1, 0.8, 1.1), color: '#9a7a6a', shadow: '#2a1410', charset: ':-=+*#%' }),
+        o('flat', { type: 'circle', bevel: 0 }, { name: 'Crater', pos: v3(0, 0.1, 0), rot: v3(-90, 0, 0), scale: u(0.18), color: '#ffb04a', shadow: '#ff3a10', emissive: 1, charset: '#%@', anim: [b('pulse', { amp: 0.15, speed: 1.4 })] }),
+        o('particles', { type: 'embers', count: 900, speed: 1.4, seed: 3 }, { name: 'Embers', pos: v3(0, 0.55, 0), scale: v3(0.9, 1.1, 0.9), color: '#ffcf6e', shadow: '#c8341a', emissive: 1, charset: '.·*+' }),
+        o('terrain', { type: 'hills', amp: 0.08, freq: 3, seed: 2 }, { name: 'Plain', pos: v3(0, -0.7, 0), scale: v3(6, 1, 3), color: '#3a2a26', shadow: '#080404', charset: ' .:-' }),
+      ],
+    }),
+  },
+  {
+    key: 'saturn',
+    label: 'Ringed giant',
+    blurb: 'A banded gas giant with tilted rings and two little moons on patrol.',
+    config: { ...BASE, bg: '#03030a', charset: ' .·:-=+*#%@', lightAzimuth: -55, lightElevation: 20, ambient: 0.12, depthFade: 0.2 },
+    world: () => ({
+      name: 'Ringed giant',
+      duration: 24,
+      fit: 1.4,
+      camera: { rot: [-18, 0, 0], zoom: 1, fov: 0.25, pan: [0, 0], anim: [b('sway', { axis: 'y', amp: 14, speed: 1 / 24 })] },
+      fields: [f('stars', { colors: ['#22223a', '#ffffff'], scale: 1.2 })],
+      objects: [
+        o('shape', { type: 'sphere' }, { name: 'Planet', scale: u(1), color: '#f0d29a', shadow: '#3a2410', tint: 'height', charset: ' .:-=+*#%', anim: [b('spin', { axis: 'y', speed: 12 })] }),
+        o('flat', { type: 'ring', inner: 0.62, bevel: 0 }, { name: 'Rings', rot: v3(-90, 0, 0), scale: u(2.2), color: '#e8c890', shadow: '#5a4020', charset: ' .·:-=' }),
+        o('shape', { type: 'sphere' }, { name: 'Moon', scale: u(0.08), color: '#d0d4e0', shadow: '#202430', charset: '#%@', anim: [b('orbit', { radius: 1.25, speed: 30, tilt: 14, phase: 0 })] }),
+        o('shape', { type: 'sphere' }, { name: 'Moon 2', scale: u(0.05), color: '#c8a0ff', shadow: '#2a1a40', charset: '#%', anim: [b('orbit', { radius: 1.6, speed: -20, tilt: -10, phase: 140 })] }),
+      ],
+    }),
+  },
+  {
+    key: 'atom',
+    label: 'Atom',
+    blurb: 'Three electron orbits wrapped round a pulsing nucleus — textbook, but alive.',
+    config: { ...BASE, bg: '#020a12', charset: ' .:-=+*#%@', lightAzimuth: 30, lightElevation: 40, ambient: 0.3, depthFade: 0.3 },
+    world: () => ({
+      name: 'Atom',
+      duration: 12,
+      fit: 1.2,
+      camera: { rot: [-20, 0, 0], zoom: 1, fov: 0.3, pan: [0, 0], anim: [b('spin', { axis: 'y', speed: 30 })] },
+      fields: [f('grid', { charset: ' .', colors: ['#020a12', '#0e2a3a'], intensity: 0.4, scale: 1 })],
+      objects: [
+        o('shape', { type: 'sphere' }, { name: 'Nucleus', scale: u(0.4), color: '#ff7a5a', shadow: '#5a1408', charset: '.:-=+*#%@', anim: [b('pulse', { amp: 0.08, speed: 1 })] }),
+        ...[0, 60, 120].map((r, i) => o('flat', { type: 'ring', inner: 0.96, bevel: 0 }, { name: `Orbit ${i + 1}`, rot: v3(70, r, 0), scale: u(1.8), color: '#5ad8ff', shadow: '#0a3a5a', emissive: 0.6, charset: '.·:' })),
+        ...[0, 60, 120].map((r, i) =>
+          o('shape', { type: 'sphere' }, { name: `Electron ${i + 1}`, scale: u(0.06), color: '#e8fbff', shadow: '#5ad8ff', emissive: 1, charset: '#@', anim: [b('orbit', { radius: 0.9, speed: 140 + i * 30, tilt: 70 - i * 10, phase: r })] }),
+        ),
+      ],
+    }),
+  },
+  {
+    key: 'lavalamp',
+    label: 'Lava lamp',
+    blurb: 'Warm wax blobs merging and splitting in a glow. Very 1972.',
+    config: { ...BASE, bg: '#12040e', charset: ' .:-=+*#%@', ambient: 0.3, depthFade: 0, cellSize: 6 },
+    world: () => ({
+      name: 'Lava lamp',
+      duration: 16,
+      fit: 1.1,
+      camera: { rot: [0, 0, 0], zoom: 1, fov: 0, pan: [0, 0], anim: [] },
+      fields: [f('metaballs', { charset: ' .:-=+*#%@', colors: ['#12040e', '#ff3a6a', '#ffb04a', '#fff0b0'], intensity: 1.1, scale: 0.6, speed: 0.5 })],
+      objects: [
+        o('flat', { type: 'rect', bevel: 0 }, { name: 'Base', pos: v3(0, -1.02, 0), scale: v3(3, 0.08, 1), color: '#c0c8d4', shadow: '#202430', charset: '=#' }),
+      ],
+    }),
+  },
+  {
+    key: 'desert',
+    label: 'Desert night',
+    blurb: 'Rolling dunes under a crescent moon, with a lone cactus keeping watch.',
+    config: { ...BASE, bg: '#060714', charset: ' .:-=+*#%@', lightAzimuth: -70, lightElevation: 25, ambient: 0.25, depthFade: 0.3 },
+    world: () => ({
+      name: 'Desert night',
+      duration: 20,
+      fit: 1.3,
+      camera: { rot: [-8, 0, 0], zoom: 1, fov: 0.3, pan: [0, 0.1], anim: [b('sway', { axis: 'y', amp: 8, speed: 1 / 20 })] },
+      fields: [
+        f('gradient', { charset: ' .·', colors: ['#060714', '#141a3a', '#2a2a5a'], angle: 90, scale: 0.9, intensity: 0.5 }),
+        f('stars', { colors: ['#2a2a4a', '#fff4e0'], scale: 1.1 }),
+      ],
+      objects: [
+        o('terrain', { type: 'dunes', amp: 0.18, freq: 2.2, speed: 0.15, seed: 8 }, { name: 'Dunes', pos: v3(0, -0.55, -0.4), scale: v3(7, 1, 3.4), color: '#e0b07a', shadow: '#2a1a24', tint: 'height', charset: ' .·:-=+' }),
+        o('flat', { type: 'moon', bevel: 0 }, { name: 'Moon', pos: v3(-0.8, 0.62, -2.4), scale: u(0.32), color: '#fff4d0', shadow: '#c0a060', emissive: 1, charset: '#%@' }),
+        o('shape', { type: 'cylinder' }, { name: 'Cactus', pos: v3(0.7, -0.18, 0.4), scale: v3(0.06, 0.4, 0.06), color: '#4aa06a', shadow: '#0a2a14', charset: ':;+#' }),
+        o('shape', { type: 'cylinder' }, { name: 'Arm', pos: v3(0.79, -0.06, 0.4), scale: v3(0.04, 0.16, 0.04), color: '#4aa06a', shadow: '#0a2a14', charset: ':;+#' }),
+        o('shape', { type: 'cylinder' }, { name: 'Arm 2', pos: v3(0.62, -0.12, 0.4), scale: v3(0.04, 0.12, 0.04), color: '#4aa06a', shadow: '#0a2a14', charset: ':;+#' }),
+      ],
+    }),
+  },
+  {
+    key: 'summit',
+    label: 'Snow summit',
+    blurb: 'Jagged alpine peaks lost in a slow, heavy snowfall.',
+    config: { ...BASE, bg: '#0a1018', charset: ' .:-=+*#%@', lightAzimuth: 60, lightElevation: 35, ambient: 0.25, depthFade: 0.4 },
+    world: () => ({
+      name: 'Snow summit',
+      duration: 20,
+      fit: 1.3,
+      camera: { rot: [-10, 0, 0], zoom: 1, fov: 0.3, pan: [0, 0.05], anim: [b('sway', { axis: 'y', amp: 10, speed: 1 / 20 })] },
+      fields: [f('gradient', { charset: ' .·', colors: ['#0a1018', '#1e2c40', '#4a5a74'], angle: 90, scale: 0.9, intensity: 0.5 })],
+      objects: [
+        o('terrain', { type: 'mountains', amp: 0.55, freq: 2.4, seed: 11 }, { name: 'Peaks', pos: v3(0, -0.55, -0.6), scale: v3(5, 1, 2.6), color: '#ffffff', shadow: '#1a2a40', tint: 'height', charset: ' .:-=+*#%' }),
+        o('particles', { type: 'snow', count: 900, speed: 0.8, seed: 4 }, { name: 'Snow', scale: v3(3.2, 2, 1.6), color: '#ffffff', shadow: '#8aa0c0', emissive: 0.8, charset: '.·*' }),
+      ],
+    }),
+  },
+  {
+    key: 'knot',
+    label: 'Torus knot',
+    blurb: 'A neon (3, 5) torus knot tumbling slowly in a dark vortex.',
+    config: { ...BASE, bg: '#06020e', charset: ' .:-=+*#%@', lightAzimuth: 40, lightElevation: 40, ambient: 0.3, depthFade: 0.45 },
+    world: () => ({
+      name: 'Torus knot',
+      duration: 12,
+      fit: 1.1,
+      camera: { rot: [-15, 0, 0], zoom: 1, fov: 0.3, pan: [0, 0], anim: [] },
+      fields: [f('vortex', { charset: ' .·', colors: ['#06020e', '#1e0a3a'], intensity: 0.22, scale: 1, speed: 0.3 })],
+      objects: [
+        o('curve', { type: 'knot', p: 3, q: 5, tube: 0.09 }, { name: 'Knot', scale: u(1.3), color: '#ff5ad8', shadow: '#2a0a5a', tint: 'height', charset: '.:-=+*#%@', anim: [b('spin', { axis: 'y', speed: 30 }), b('spin', { axis: 'x', speed: 12 })] }),
+      ],
+    }),
+  },
+  {
+    key: 'heartbeat',
+    label: 'Heartbeat',
+    blurb: 'A beating enamel heart in a slow drift of petals.',
+    config: { ...BASE, bg: '#14040a', charset: ' .:-=+*#%@', lightAzimuth: -30, lightElevation: 40, ambient: 0.3, depthFade: 0.2 },
+    world: () => ({
+      name: 'Heartbeat',
+      duration: 8,
+      fit: 1.1,
+      camera: { rot: [0, 0, 0], zoom: 1, fov: 0.3, pan: [0, 0], anim: [b('sway', { axis: 'y', amp: 18, speed: 1 / 8 })] },
+      fields: [f('ripples', { charset: ' .·:', colors: ['#14040a', '#4a0a20'], intensity: 0.2, scale: 1, speed: 0.6 })],
+      objects: [
+        o('flat', { type: 'heart', bevel: 0.25, depth: 0.25 }, { name: 'Heart', scale: u(1.1), color: '#ff4a6a', shadow: '#4a0410', charset: '.:-=+*#%@', anim: [b('pulse', { amp: 0.08, speed: 1.2 })] }),
+        o('flat', { type: 'petal', bevel: 0.1 }, { name: 'Petals', pos: v3(-1.6, 1.1, -0.4), scale: u(0.1), color: '#ffb0c4', shadow: '#6a1a2a', charset: '.:*#', array: arr({ count: 8, step: v3(0.42, -0.08, 0.1), rot: v3(0, 40, 25), phase: 0.7 }), anim: [b('drift', { vel: v3(0.08, -0.12, 0), wrap: 2.4 }), b('spin', { axis: 'z', speed: 60 })] }),
+      ],
+    }),
+  },
 ]
 
 export function getWorldPreset(key: string): WorldPreset | undefined {
