@@ -1,16 +1,16 @@
 ---
-name: ascii-studio
-description: Build ASCII animations for the ascii/mesh studio by writing `*.ascii.json` piece files into a folder the studio is holding — logos, 3D models, and whole animated 2D/3D worlds (many objects, generative backgrounds, camera moves). Use when asked to make, tweak or model an ASCII render/animation/logo/scene/world, or when the user mentions the ascii/mesh studio, pieces, or `.frame.txt`.
+name: ohmyascii-studio
+description: Build ASCII animations for the ohmyascii studio by writing `*.ascii.json` piece files into a folder the studio is holding — logos, 3D models, and whole animated 2D/3D worlds (many objects, generative backgrounds, camera moves). Use when asked to make, tweak or model an ASCII render/animation/logo/scene/world, or when the user mentions the ohmyascii studio, pieces, or `.frame.txt`.
 ---
 
-# ascii-studio
+# ohmyascii-studio
 
 The studio (this repo's app, `pnpm dev`) can **hold a folder** (Folder section → Open folder,
 desktop Chrome/Edge). Every `*.ascii.json` in it is a *piece*. You write pieces with plain file
 edits; the studio renders the active one live within ~0.5s, saves the user's slider tweaks back
 to the same file, and writes what it rendered to `<name>.frame.txt` next to it.
 
-## MCP tools (if the `ascii-studio` server is connected)
+## MCP tools (if the `ohmyascii-studio` server is connected)
 
 Prefer them over raw file edits: `studio_guide` (full format), `get_gallery_piece` (tuned examples),
 `validate_piece`, `render_piece` (headless text frames at any time `t` — check composition and motion
@@ -128,5 +128,5 @@ Source of truth: `lib/ascii/config.ts` (`AsciiConfig`), `lib/ascii/piece.ts`, `l
 
 ## Using a piece in an app
 
-`<AsciiMesh source={...} config={piece.config} />` from `components/ascii-mesh.tsx`
+`<OhMyAscii source={...} config={piece.config} />` from `components/ohmyascii.tsx`
 (scene: `source={{ kind: 'scene', scene: piece.source.scene }}`; world: `source={{ kind: 'world', world: piece.source.world }}`; image: the file's URL).

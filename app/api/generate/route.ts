@@ -10,7 +10,7 @@ import { buildInstructions } from '@/lib/ascii/world-prompt'
 
 export const maxDuration = 120
 
-const MODEL = process.env.ASCII_AI_MODEL || 'anthropic/claude-sonnet-5.5'
+const MODEL = process.env.OHMYASCII_AI_MODEL || 'anthropic/claude-sonnet-5.5'
 const MAX_TURNS = 12
 const MAX_CHARS = 60_000
 
@@ -51,7 +51,7 @@ export async function POST(req: Request) {
     const prompt = session?.resume
       ? (messages[messages.length - 1].content as string)
       : messages.map((m) => (m.role === 'user' ? `USER:\n${m.content as string}` : `ASSISTANT:\n${m.content as string}`)).join('\n\n')
-    return new Response(streamClaude({ instructions: buildInstructions(), prompt, model: process.env.ASCII_CLAUDE_MODEL || undefined, signal: req.signal, session }), {
+    return new Response(streamClaude({ instructions: buildInstructions(), prompt, model: process.env.OHMYASCII_CLAUDE_MODEL || undefined, signal: req.signal, session }), {
       headers: { 'content-type': 'text/plain; charset=utf-8', 'cache-control': 'no-store' },
     })
   }

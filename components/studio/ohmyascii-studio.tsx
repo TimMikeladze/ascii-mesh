@@ -3,7 +3,7 @@
 import type React from 'react'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Code2, Link2, Pause, Play, RotateCcw, Upload, Undo2 } from 'lucide-react'
-import { AsciiMesh, type AsciiMeshHandle, type AsciiMeshStats, type BrushPhase, type MeshHit } from '@/components/ascii-mesh'
+import { OhMyAscii, type OhMyAsciiHandle, type OhMyAsciiStats, type BrushPhase, type MeshHit } from '@/components/ohmyascii'
 import { CHARSETS, DEFAULT_CONFIG, LOOKS, diffFromDefaults, mergeConfig, type AsciiConfig, type ColorMode } from '@/lib/ascii/config'
 import { getSourcePresets } from '@/lib/ascii/presets'
 import {
@@ -44,7 +44,7 @@ function buildCode(cfg: AsciiConfig, source: SourceState): string {
   let src: string
   let note = ''
   if (source.kind === 'world') {
-    return `import { AsciiMesh } from '@/components/ascii-mesh'
+    return `import { OhMyAscii } from '@/components/ohmyascii'
 import type { SerializedWorld } from '@/lib/ascii/world'
 // World → Export downloads this file
 import world from './world.json'
@@ -53,7 +53,7 @@ const config = ${JSON.stringify(diff, null, 2)}
 
 export function Hero() {
   return (
-    <AsciiMesh
+    <OhMyAscii
       source={{ kind: 'world', world: world as SerializedWorld }}
       config={config}
       className="h-[640px] w-full"
@@ -62,7 +62,7 @@ export function Hero() {
 }`
   }
   if (source.kind === 'scene') {
-    return `import { AsciiMesh } from '@/components/ascii-mesh'
+    return `import { OhMyAscii } from '@/components/ohmyascii'
 import type { SerializedScene } from '@/lib/ascii/scene'
 // Model → Scene JSON downloads this file
 import scene from './scene.json'
@@ -71,7 +71,7 @@ const config = ${JSON.stringify(diff, null, 2)}
 
 export function Hero() {
   return (
-    <AsciiMesh
+    <OhMyAscii
       source={{ kind: 'scene', scene: scene as SerializedScene }}
       config={config}
       className="h-[640px] w-full"
@@ -88,13 +88,13 @@ export function Hero() {
     src = `"/logo.svg"`
     note = '      // any image, SVG or logo URL — the studio preview used a built-in mark\n'
   }
-  return `import { AsciiMesh } from '@/components/ascii-mesh'
+  return `import { OhMyAscii } from '@/components/ohmyascii'
 
 const config = ${JSON.stringify(diff, null, 2)}
 
 export function Hero() {
   return (
-    <AsciiMesh
+    <OhMyAscii
 ${note}      source=${src}
       config={config}
       className="h-[640px] w-full"
@@ -133,9 +133,9 @@ export function decodeShare(hash: string): { cfg: AsciiConfig; source?: SourceSt
   }
 }
 
-const SESSION_KEY = 'ascii-mesh:session'
-const SCENE_KEY = 'ascii-mesh:scene'
-const WORLD_KEY = 'ascii-mesh:world'
+const SESSION_KEY = 'ohmyascii:session'
+const SCENE_KEY = 'ohmyascii:scene'
+const WORLD_KEY = 'ohmyascii:world'
 const HISTORY_LIMIT = 100
 const BRUSH_TOOLS: SceneTool[] = ['paint', 'sculpt-add', 'sculpt-carve']
 const SHORTCUTS: [string, string][] = [
@@ -192,19 +192,19 @@ function isTyping(target: EventTarget | null) {
   return !!el && (el.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(el.tagName))
 }
 
-export function AsciiStudio() {
+export function OhMyAsciiStudio() {
   const [cfg, setCfg] = useState<AsciiConfig>(DEFAULT_CONFIG)
   const [source, setSource] = useState<SourceState>({ kind: 'preset', key: 'starburst' })
   const [paused, setPaused] = useState(false)
   const [replayKey, setReplayKey] = useState(0)
-  const [stats, setStats] = useState<AsciiMeshStats | null>(null)
+  const [stats, setStats] = useState<OhMyAsciiStats | null>(null)
   const [dragOver, setDragOver] = useState(false)
   const [notice, setNotice] = useState<string | null>(null)
   const [copied, setCopied] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
   const [recording, setRecording] = useState(false)
   const uploadUrlRef = useRef<string | null>(null)
-  const meshRef = useRef<AsciiMeshHandle>(null)
+  const meshRef = useRef<OhMyAsciiHandle>(null)
   const fileRef = useRef<HTMLInputElement>(null)
 
   const [scene, setScene] = useState<MeshScene>(starterScene)
@@ -355,7 +355,7 @@ export function AsciiStudio() {
     const raw =
       source.kind === 'upload' ? source.name : source.kind === 'text' ? source.text : source.kind === 'scene' ? 'model' : source.kind === 'world' ? (world.name ?? 'world') : source.key
     const slug = raw.replace(/\.[a-z0-9]+$/i, '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 40)
-    return `${slug || 'ascii-mesh'}-ascii`
+    return `${slug || 'ohmyascii'}-ascii`
   }, [source, world.name])
 
   const copyImage = useCallback(() => {
@@ -956,7 +956,7 @@ export function AsciiStudio() {
   }, [folder.files, folder.root, folder.pending, activePiece, source, applyPiece])
 
   // Remember the open piece across reloads.
-  const ACTIVE_KEY = 'ascii-mesh:piece'
+  const ACTIVE_KEY = 'ohmyascii:piece'
   const wantedRef = useRef<string | null>(null)
   useEffect(() => {
     try {
@@ -1080,13 +1080,13 @@ export function AsciiStudio() {
     [activePiece, folderRoot, pieceFromState],
   )
 
-  const handleStats = useCallback((s: AsciiMeshStats) => setStats(s), [])
+  const handleStats = useCallback((s: OhMyAsciiStats) => setStats(s), [])
 
   return (
     <div className="flex min-h-dvh flex-col lg:h-dvh lg:overflow-hidden">
       <header className="flex h-14 shrink-0 items-stretch border-b border-dashed border-border lg:grid lg:grid-cols-[auto_minmax(0,1fr)_22rem]">
         <div className="flex items-center border-r border-dashed border-border px-4 sm:px-5">
-          <h1 className="text-sm font-medium tracking-wide">ascii/mesh</h1>
+          <h1 className="text-sm font-medium tracking-wide">ohmyascii</h1>
         </div>
         <p className="hidden flex-1 items-center truncate px-5 text-xs text-muted-foreground xl:flex">
           Turn images, logos, sculptures and whole 2D / 3D scenes into animated ASCII.
@@ -1167,7 +1167,7 @@ export function AsciiStudio() {
           }}
         >
           <div className="absolute inset-0">
-            <AsciiMesh
+            <OhMyAscii
               ref={meshRef}
               source={spec}
               config={cfg}

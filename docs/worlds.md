@@ -54,7 +54,7 @@ modelled `sculpt` objects use the SDF sampler at the smallest spacing.
 
 ## Component / studio
 
-- `SourceSpec` gains `{ kind: 'world', world }`; `AsciiMesh` swaps renderer, builds object models
+- `SourceSpec` gains `{ kind: 'world', world }`; `OhMyAscii` swaps renderer, builds object models
   (text / image async), disables config auto-motion (the world camera animates), drag still orbits.
   Replay restarts the world clock.
 - Studio source **Compose a scene** → World section: gallery of curated scenes, scene settings
@@ -68,7 +68,7 @@ modelled `sculpt` objects use the SDF sampler at the smallest spacing.
 - Studio section **Generate with AI**: a chat. Each send posts the conversation (last 12 turns) plus
   the scene on screen (world + look keys, ids stripped) unless "start fresh" is ticked.
 - The route calls `streamText` (AI SDK 7, AI Gateway model string, default `anthropic/claude-sonnet-5.5`,
-  override `ASCII_AI_MODEL`) with `buildInstructions()` — the world format generated from the same
+  override `OHMYASCII_AI_MODEL`) with `buildInstructions()` — the world format generated from the same
   type lists the parser uses, craft rules, and two gallery worlds as examples — and streams plain text.
 - Reply = one sentence + a ```json block `{ world, config }`. `parseAiReply` tolerates a missing
   closing fence or bare object, runs `parseWorld`, and keeps only whitelisted look keys

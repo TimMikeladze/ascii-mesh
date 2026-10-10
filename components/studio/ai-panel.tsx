@@ -43,7 +43,7 @@ export interface AiPanelProps {
   onCopy: (text: string) => void
 }
 
-const ENGINE_KEY = 'ascii-mesh:ai-engine'
+const ENGINE_KEY = 'ohmyascii:ai-engine'
 
 export function AiPanel({ current, onApply, handoff, onCopy }: AiPanelProps) {
   const [status, setStatus] = useState<AgentStatus | null>(null)

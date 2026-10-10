@@ -21,7 +21,7 @@ import { objectInstances, parseWorld, type World } from '@/lib/ascii/world'
 import { useWorldBuild } from '@/lib/ascii/world-build'
 import { WorldRenderer, type BuiltObject } from '@/lib/ascii/world-renderer'
 
-export interface AsciiMeshStats {
+export interface OhMyAsciiStats {
   fps: number
   cols: number
   rows: number
@@ -29,7 +29,7 @@ export interface AsciiMeshStats {
   glyphs: number
 }
 
-export interface AsciiMeshHandle {
+export interface OhMyAsciiHandle {
   getCanvas: () => HTMLCanvasElement | null
   resetView: () => void
   /** Current frame as plain-text ASCII. */
@@ -51,7 +51,7 @@ export interface MeshHit {
 
 export type BrushPhase = 'start' | 'move' | 'end'
 
-export interface AsciiMeshProps {
+export interface OhMyAsciiProps {
   source: SourceSpec | string
   config?: Partial<AsciiConfig>
   className?: string
@@ -59,7 +59,7 @@ export interface AsciiMeshProps {
   paused?: boolean
   replayKey?: number
   label?: string
-  onStats?: (stats: AsciiMeshStats) => void
+  onStats?: (stats: OhMyAsciiStats) => void
   onError?: (error: Error) => void
   onLoadingChange?: (loading: boolean) => void
   /** `brush`: primary drag calls `onBrush` instead of rotating (alt / right drag still orbits). */
@@ -73,14 +73,14 @@ export interface AsciiMeshProps {
   highlightObject?: number | null
   /** World sources: a click (not a drag) on the canvas reports the object under it, or -1. */
   onPickObject?: (index: number) => void
-  ref?: Ref<AsciiMeshHandle>
+  ref?: Ref<OhMyAsciiHandle>
 }
 
 function quantize16(n: number) {
   return Math.ceil(n / 16) * 16
 }
 
-export function AsciiMesh({
+export function OhMyAscii({
   source,
   config,
   className,
@@ -98,7 +98,7 @@ export function AsciiMesh({
   highlightObject = null,
   onPickObject,
   ref,
-}: AsciiMeshProps) {
+}: OhMyAsciiProps) {
   const cfg = useMemo(() => mergeConfig(config), [config])
   const spec = useMemo<SourceSpec>(() => (typeof source === 'string' ? { kind: 'url', url: source } : source), [source])
 

@@ -16,7 +16,7 @@ export function Section({
 }) {
   // Remember which sections the user opened or closed across visits.
   const ref = useRef<HTMLDetailsElement>(null)
-  const storageKey = `ascii-mesh:section:${title}`
+  const storageKey = `ohmyascii:section:${title}`
   useEffect(() => {
     try {
       const saved = localStorage.getItem(storageKey)

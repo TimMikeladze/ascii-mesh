@@ -95,7 +95,7 @@ export function useStudioFolder(): StudioFolder {
       guard(async () => {
         const picker = getDirectoryPicker()
         if (!picker) throw new Error('This browser has no directory picker')
-        await hold(await picker({ id: 'ascii-mesh-folder', mode: 'readwrite' }))
+        await hold(await picker({ id: 'ohmyascii-folder', mode: 'readwrite' }))
       }),
     [guard, hold],
   )

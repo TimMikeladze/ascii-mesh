@@ -126,7 +126,7 @@ export function studioGuide(): string {
   return `${buildInstructions()}
 # Pieces (files the studio renders)
 A piece is \`<name>${PIECE_SUFFIX}\`: { "v": 1, "name"?, "source": { "kind": "world", "world": World }, "config": Config-diff }.
-Other source kinds: preset { key }, text { text, fontKey, weight }, image { path }, scene { scene } (see the ascii-studio skill).
+Other source kinds: preset { key }, text { text, fontKey, weight }, image { path }, scene { scene } (see the ohmyascii-studio skill).
 Loop: write_piece → render_piece (headless preview, instant) → the studio (if it holds this folder) renders live and writes
 <name>${FRAME_SUFFIX}; read it with read_piece. Re-read a piece before editing — the user may have tweaked it in the studio.`
 }

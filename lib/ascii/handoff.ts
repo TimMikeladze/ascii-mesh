@@ -17,7 +17,7 @@ export interface HandoffInput {
 
 export function agentPrompt({ request, piecePath, folderName, pieceJson, studioUrl }: HandoffInput): string {
   const ask = request.trim() || 'Make this more beautiful and more alive: richer composition, depth and motion that loops.'
-  const lines = ['Use the ascii-studio skill.', '']
+  const lines = ['Use the ohmyascii-studio skill.', '']
   if (piecePath) {
     const frame = piecePath.replace(/\.ascii\.json$/, '') + '.frame.txt'
     lines.push(

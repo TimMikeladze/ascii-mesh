@@ -1,6 +1,6 @@
 import { ImageResponse } from 'next/og'
 
-export const alt = 'ascii/mesh — turn any image, SVG or logo into a rotatable 3D ASCII animation'
+export const alt = 'ohmyascii — turn any image, SVG or logo into a rotatable 3D ASCII animation'
 export const size = { width: 1200, height: 630 }
 export const contentType = 'image/png'
 
@@ -30,7 +30,7 @@ export default function Image() {
     (
       <div style={{ width: '100%', height: '100%', display: 'flex', background: '#0f0f0f', color: '#e4e4e4', fontFamily: 'monospace', padding: 64 }}>
         <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'space-between', width: 520 }}>
-          <div style={{ fontSize: 44, letterSpacing: 2 }}>ascii/mesh</div>
+          <div style={{ fontSize: 44, letterSpacing: 2 }}>ohmyascii</div>
           <div style={{ fontSize: 34, lineHeight: 1.3, color: '#bdbdbd' }}>Turn any image, SVG or logo into a rotatable 3D ASCII animation.</div>
         </div>
         <div style={{ display: 'flex', flexDirection: 'column', marginLeft: 'auto', fontSize: 20, lineHeight: 1.1, color: '#9a9a9a', whiteSpace: 'pre' }}>

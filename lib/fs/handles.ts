@@ -6,7 +6,7 @@ type PermissionAwareHandle = FileSystemDirectoryHandle & {
   queryPermission?: (descriptor?: { mode?: 'read' | 'readwrite' }) => Promise<PermissionState>
 }
 
-const DATABASE = 'ascii-mesh-fs'
+const DATABASE = 'ohmyascii-fs'
 const STORE = 'handles'
 const KEY = 'folder'
 

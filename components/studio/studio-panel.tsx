@@ -448,7 +448,7 @@ export function StudioPanel({
           className="w-full resize-y border border-border bg-background p-2 text-[11px] leading-relaxed text-muted-foreground focus-visible:outline focus-visible:outline-1 focus-visible:outline-dashed focus-visible:outline-offset-2"
         />
         <p className="text-[11px] leading-relaxed text-muted-foreground">
-          Copy <code className="text-foreground">components/ascii-mesh.tsx</code> and{' '}
+          Copy <code className="text-foreground">components/ohmyascii.tsx</code> and{' '}
           <code className="text-foreground">lib/ascii/</code> into any Next.js project, install{' '}
           <code className="text-foreground">swr</code>, and expose the mono fonts as CSS variables.
         </p>

@@ -1,5 +1,5 @@
-import { AsciiStudio } from '@/components/studio/ascii-studio'
+import { OhMyAsciiStudio } from '@/components/studio/ohmyascii-studio'
 
 export default function Page() {
-  return <AsciiStudio />
+  return <OhMyAsciiStudio />
 }

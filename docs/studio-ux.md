@@ -6,7 +6,7 @@
 - **Video export** — Export → Video records 5s of the canvas via `MediaRecorder` (WebM, MP4 fallback).
 - **Undo/redo** — ⌘Z / ⇧⌘Z (⌘Y). Edits within 500ms coalesce (slider drags = one step). History capped at 100.
 - **Randomize** — `x` picks a look, charset, colour mode, light and motion. Undoable.
-- **Session restore** — state saved to `localStorage` (`ascii-mesh:session`), same encoding as share links. Saving waits for restore so defaults never overwrite it.
+- **Session restore** — state saved to `localStorage` (`ohmyascii:session`), same encoding as share links. Saving waits for restore so defaults never overwrite it.
 - **Help** — `?` toggles a shortcuts overlay; Esc closes.
 - **Fullscreen** — `f` toggles fullscreen on the canvas.
 - **Copy PNG** — Export → Copy PNG writes the frame via `ClipboardItem`.
@@ -21,8 +21,8 @@
 - **Header** — added Share; "Copy code" shortened to "Code" so six actions fit the 22rem column.
 - **Sliders** — dot marks values changed from default; double-click slider resets; click the value to type an exact number (clamped, Enter/blur commits, Esc cancels).
 - **Sections** — open/closed state persisted per section in `localStorage`.
-- **Reduced motion** — `AsciiMesh` reacts live to `prefers-reduced-motion` changes.
-- **Copy text** — `AsciiRenderer.toText()` rebuilds the last frame's glyph grid, trimmed to its bounding box; exposed as `AsciiMeshHandle.getText()`, Export → Copy text, `t`.
+- **Reduced motion** — `OhMyAscii` reacts live to `prefers-reduced-motion` changes.
+- **Copy text** — `AsciiRenderer.toText()` rebuilds the last frame's glyph grid, trimmed to its bounding box; exposed as `OhMyAsciiHandle.getText()`, Export → Copy text, `t`.
 - **Reverse ramp / Swap colors** — one-click helpers under the charset field and the colour pair.
 - **Drop** — images dragged from another tab (URL / data URI) convert like files; drag overlay no longer flickers over child elements.
 - **Mobile hint** — shortened touch hint so it no longer overlaps the stats.

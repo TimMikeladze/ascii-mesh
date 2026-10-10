@@ -10,7 +10,7 @@ describe('isLocalRequest', () => {
     expect(isLocalRequest(req('localhost:3001'), 'development')).toBe(true)
     expect(isLocalRequest(req('127.0.0.1:3001', 'http://127.0.0.1:3001'), 'development')).toBe(true)
     expect(isLocalRequest(req('localhost:3001', 'https://evil.example'), 'development')).toBe(false)
-    expect(isLocalRequest(req('ascii-mesh.vercel.app'), 'development')).toBe(false)
+    expect(isLocalRequest(req('ohmyascii.vercel.app'), 'development')).toBe(false)
     expect(isLocalRequest(req('localhost:3001'), 'production')).toBe(false)
     expect(isLoopbackHost('[::1]:3000')).toBe(true)
     expect(isLoopbackHost('localhost.evil.com')).toBe(false)
@@ -30,7 +30,7 @@ describe('parseClaudeLine', () => {
 describe('agentPrompt', () => {
   it('points at the open piece and its frame file', () => {
     const p = agentPrompt({ request: 'add a moon', piecePath: 'art/night.ascii.json', folderName: 'ascii' })
-    expect(p.startsWith('Use the ascii-studio skill.')).toBe(true)
+    expect(p.startsWith('Use the ohmyascii-studio skill.')).toBe(true)
     expect(p).toContain('`art/night.ascii.json`')
     expect(p).toContain('`art/night.frame.txt`')
     expect(p).toContain('Request: add a moon')

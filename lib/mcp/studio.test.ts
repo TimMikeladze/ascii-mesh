@@ -4,7 +4,7 @@ import { join } from 'node:path'
 import { describe, expect, it } from 'vitest'
 import { StudioFiles, galleryList, galleryPiece, renderPieceText, studioGuide, validatePiece } from './studio'
 
-const tmp = () => mkdtempSync(join(tmpdir(), 'ascii-studio-'))
+const tmp = () => mkdtempSync(join(tmpdir(), 'ohmyascii-'))
 
 describe('StudioFiles', () => {
   it('writes normalised pieces, lists them, reads them with their frame, and stays inside the root', () => {

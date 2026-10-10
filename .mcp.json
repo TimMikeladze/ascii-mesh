@@ -1,6 +1,6 @@
 {
   "mcpServers": {
-    "ascii-studio": {
+    "ohmyascii-studio": {
       "command": "./node_modules/.bin/tsx",
       "args": ["scripts/mcp-server.ts"]
     }

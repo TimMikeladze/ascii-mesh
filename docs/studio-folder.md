@@ -48,9 +48,9 @@ Sources:
   rather than overwriting an existing file) and the piece is rewritten to reference it in the
   same step.
 - **Frame feedback**: after the active piece renders (debounced 1.5s), write
-  `<stem>.frame.txt` = `AsciiMeshHandle.getText()` — the agent reads it to check its work.
+  `<stem>.frame.txt` = `OhMyAsciiHandle.getText()` — the agent reads it to check its work.
 
-## Agent skill — `skills/ascii-studio/SKILL.md`
+## Agent skill — `skills/ohmyascii-studio/SKILL.md`
 
 Source of truth in `skills/`; `scripts/setup-skills.mjs` (postinstall) mirrors it into
 `.claude/skills/` and `.agents/skills/` (gitignored), same as robocn. Covers: open the studio

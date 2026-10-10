@@ -42,7 +42,7 @@ Plain JSON — goes into history, localStorage and (minus paint/meshes) share li
   added by the same stroke (it would climb toward the camera).
 - `AsciiRenderer.project()` places DOM overlays: the brush ring and a dashed ring around the selected
   shape (positioned every rendered frame, so they never end up in PNG/video exports).
-- `AsciiMesh` props: `tool: 'orbit' | 'brush'`, `brushRadius`, `onBrush(hit, phase)`.
+- `OhMyAscii` props: `tool: 'orbit' | 'brush'`, `brushRadius`, `onBrush(hit, phase)`.
   In brush mode drag paints instead of rotating, auto-motion pauses. `SourceSpec` gains
   `{ kind: 'scene', scene }` so exported code can render a saved scene.
 
@@ -56,7 +56,7 @@ Plain JSON — goes into history, localStorage and (minus paint/meshes) share li
 - Canvas toolbar (scene source only): Orbit · Select · Paint · Clay · Carve (`o v b g e`), brush size,
   brush colour; `[`/`]` size, `d`/`⌫` duplicate/delete, alt-drag orbits. Painting switches colour mode to `source` so it's visible.
 - Undo history snapshots `{cfg, scene}`; one stroke = one undo step.
-- Session: scene saved under `ascii-mesh:scene`. Share links carry prims + dabs; paint and imported
+- Session: scene saved under `ohmyascii:scene`. Share links carry prims + dabs; paint and imported
   meshes stay local.
 
 ## Tests

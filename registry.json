@@ -1,19 +1,19 @@
 {
   "$schema": "https://ui.shadcn.com/schema/registry.json",
-  "name": "ascii-mesh",
-  "homepage": "https://ascii-mesh.vercel.app",
+  "name": "ohmyascii",
+  "homepage": "https://ohmyascii.vercel.app",
   "items": [
     {
-      "name": "ascii-mesh",
+      "name": "ohmyascii",
       "type": "registry:component",
-      "title": "ASCII Mesh",
+      "title": "ohmyascii",
       "description": "Turn any image, SVG, logo, text, modelled 3D scene or whole animated 2D/3D world into a rotatable ASCII render.",
       "dependencies": [
         "swr"
       ],
       "files": [
         {
-          "path": "components/ascii-mesh.tsx",
+          "path": "components/ohmyascii.tsx",
           "type": "registry:component"
         },
         {
@@ -59,10 +59,10 @@
       ]
     },
     {
-      "name": "ascii-studio",
+      "name": "ohmyascii-studio",
       "type": "registry:block",
-      "title": "ASCII Studio",
-      "description": "Full editor for ASCII Mesh: sources, looks, ~70 controls, a world composer (animated 2D/3D scenes, gallery, AI generation), a 3D modeller (shapes, sculpt, paint, OBJ/STL import), undo/redo, share links, code/JSON/PNG/text/video/PLY export.",
+      "title": "ohmyascii studio",
+      "description": "Full editor for ohmyascii: sources, looks, ~70 controls, a world composer (animated 2D/3D scenes, gallery, AI generation), a 3D modeller (shapes, sculpt, paint, OBJ/STL import), undo/redo, share links, code/JSON/PNG/text/video/PLY export.",
       "dependencies": [
         "lucide-react",
         "swr",
@@ -75,7 +75,7 @@
       ],
       "files": [
         {
-          "path": "components/ascii-mesh.tsx",
+          "path": "components/ohmyascii.tsx",
           "type": "registry:component"
         },
         {
@@ -99,7 +99,7 @@
           "type": "registry:lib"
         },
         {
-          "path": "components/studio/ascii-studio.tsx",
+          "path": "components/studio/ohmyascii-studio.tsx",
           "type": "registry:component"
         },
         {

@@ -3,12 +3,12 @@ import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js'
 import { z } from 'zod'
 import { StudioFiles, galleryList, galleryPiece, renderPieceText, studioGuide, validatePiece } from '../lib/mcp/studio'
 
-// ascii-studio MCP server (stdio). Lets Claude Code compose, validate, preview and save pieces in
-// the folder the studio holds. Root: ASCII_STUDIO_DIR, else the working directory.
+// ohmyascii-studio MCP server (stdio). Lets Claude Code compose, validate, preview and save pieces in
+// the folder the studio holds. Root: OHMYASCII_STUDIO_DIR, else the working directory.
 // Registered for this repo in .mcp.json; see docs/local-claude.md.
 
-const files = new StudioFiles(process.env.ASCII_STUDIO_DIR || process.cwd())
-const server = new McpServer({ name: 'ascii-studio', version: '0.1.0' })
+const files = new StudioFiles(process.env.OHMYASCII_STUDIO_DIR || process.cwd())
+const server = new McpServer({ name: 'ohmyascii-studio', version: '0.1.0' })
 
 const text = (t: string) => ({ content: [{ type: 'text' as const, text: t }] })
 const fail = (e: unknown) => ({ content: [{ type: 'text' as const, text: `Error: ${(e as Error).message}` }], isError: true })
@@ -106,6 +106,6 @@ server.registerTool(
 )
 
 server.connect(new StdioServerTransport()).catch((e) => {
-  console.error('[ascii-studio mcp]', e)
+  console.error('[ohmyascii-studio mcp]', e)
   process.exit(1)
 })

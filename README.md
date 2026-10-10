@@ -1,4 +1,4 @@
-# ascii/mesh
+# ohmyascii
 
 Turn any photo, SVG, logo or text — a 3D shape you model, sculpt and paint yourself, or a whole animated 2D / 3D scene you compose (or describe to an AI) — into a rotatable, animated ASCII render. Ships as a studio app and as shadcn registry items.
 
@@ -12,31 +12,31 @@ pnpm test           # vitest: modelling, worlds (animation, geometry, fields, re
 
 AI scene generation (optional) has two engines:
 
-- **Claude Code (local)** — when the studio runs on localhost and `claude` is installed and logged in, the chat uses your own Claude Code (`claude -p`, no API key, tools disabled), keeping one Claude session per chat. `ASCII_CLAUDE_MODEL` picks a model. Never available on a deployed site.
-- **AI Gateway** — set `AI_GATEWAY_API_KEY`, or run `vercel env pull .env.local` in a linked project to get an OIDC token. `ASCII_AI_MODEL` overrides the model (default `anthropic/claude-sonnet-5.5`).
+- **Claude Code (local)** — when the studio runs on localhost and `claude` is installed and logged in, the chat uses your own Claude Code (`claude -p`, no API key, tools disabled), keeping one Claude session per chat. `OHMYASCII_CLAUDE_MODEL` picks a model. Never available on a deployed site.
+- **AI Gateway** — set `AI_GATEWAY_API_KEY`, or run `vercel env pull .env.local` in a linked project to get an OIDC token. `OHMYASCII_AI_MODEL` overrides the model (default `anthropic/claude-sonnet-5.5`).
 
 ## Install with the shadcn CLI
 
 The registry is served from `public/r/` by this app (rebuilt on every `pnpm build`, or `pnpm registry:build`).
 
 ```bash
-# Just the component (components/ascii-mesh.tsx + lib/ascii/*)
-npx shadcn@latest add https://ascii-mesh.vercel.app/r/ascii-mesh.json
+# Just the component (components/ohmyascii.tsx + lib/ascii/*)
+npx shadcn@latest add https://ohmyascii.vercel.app/r/ohmyascii.json
 
 # Full editor (component + studio UI + presets)
-npx shadcn@latest add https://ascii-mesh.vercel.app/r/ascii-studio.json
+npx shadcn@latest add https://ohmyascii.vercel.app/r/ohmyascii-studio.json
 ```
 
-Locally: `http://localhost:<port>/r/ascii-mesh.json`.
+Locally: `http://localhost:<port>/r/ohmyascii.json`.
 
 Items are defined in `registry.json`. Fonts are read from the CSS variables `--font-geist-mono`, `--font-jetbrains`, `--font-space`, `--font-plex`; missing variables fall back to the system monospace font.
 
 ## Use
 
 ```tsx
-import { AsciiMesh } from '@/components/ascii-mesh'
+import { OhMyAscii } from '@/components/ohmyascii'
 
-<AsciiMesh
+<OhMyAscii
   source="/logo.svg"
   config={{ shape: 'extrude', thickness: 0.4, charset: ' .:-=+*#%@' }}
   className="h-[640px] w-full"
@@ -58,11 +58,11 @@ Source → **Model, sculpt & paint in 3D** switches the canvas to a scene you bu
 Use an exported scene in your own app:
 
 ```tsx
-import { AsciiMesh } from '@/components/ascii-mesh'
+import { OhMyAscii } from '@/components/ohmyascii'
 import type { SerializedScene } from '@/lib/ascii/scene'
 import scene from './scene.json'
 
-<AsciiMesh source={{ kind: 'scene', scene: scene as SerializedScene }} className="h-[640px] w-full" />
+<OhMyAscii source={{ kind: 'scene', scene: scene as SerializedScene }} className="h-[640px] w-full" />
 ```
 
 How it works: every shape and sculpt dab is a signed distance function; the scene samples each shape's surface, keeps samples on the blended surface and projects them onto it (`lib/ascii/scene.ts`). Strokes and shape tweaks only resample the region that changed. Details in `docs/mesh-editor.md`.
@@ -80,16 +80,16 @@ Source → **Compose a 2D / 3D scene** switches to a *world*: many objects, each
 - Worlds save to the session, share links (local images excepted), folder pieces and **Export** (`*.world.json`).
 
 ```tsx
-import { AsciiMesh } from '@/components/ascii-mesh'
+import { OhMyAscii } from '@/components/ohmyascii'
 import type { SerializedWorld } from '@/lib/ascii/world'
 import world from './sunset.world.json'
 
-<AsciiMesh source={{ kind: 'world', world: world as SerializedWorld }} className="h-[640px] w-full" />
+<OhMyAscii source={{ kind: 'world', world: world as SerializedWorld }} className="h-[640px] w-full" />
 ```
 
 ### Generate with AI
 
-The **Generate with AI** section is a chat with an art director: describe a scene ("a lighthouse on a cliff in a storm") and it streams back a world and look, applied as one undo step. Follow-ups ("make it snow", "add a second moon") edit the scene on screen. Pick **Claude Code (local)** or **AI Gateway** at the top of the section. **Copy for Claude Code in your terminal** copies a handoff prompt instead ("Use the ascii-studio skill…" + the open piece or the scene JSON + your request) for an agent that edits piece files while the studio renders them — the robocn pattern, see `docs/local-claude.md`. `app/api/generate/route.ts` streams from the AI Gateway; `lib/ascii/world-prompt.ts` holds the instructions and the tolerant reply parser. Details: `docs/worlds.md`.
+The **Generate with AI** section is a chat with an art director: describe a scene ("a lighthouse on a cliff in a storm") and it streams back a world and look, applied as one undo step. Follow-ups ("make it snow", "add a second moon") edit the scene on screen. Pick **Claude Code (local)** or **AI Gateway** at the top of the section. **Copy for Claude Code in your terminal** copies a handoff prompt instead ("Use the ohmyascii-studio skill…" + the open piece or the scene JSON + your request) for an agent that edits piece files while the studio renders them — the robocn pattern, see `docs/local-claude.md`. `app/api/generate/route.ts` streams from the AI Gateway; `lib/ascii/world-prompt.ts` holds the instructions and the tolerant reply parser. Details: `docs/worlds.md`.
 
 ## Build with an agent (folder mode)
 
@@ -104,14 +104,14 @@ The studio can hold a folder on disk (Folder → **Open folder**, desktop Chrome
 - After each change the rendered frame is written next to the piece as `<name>.frame.txt`, so the agent can read what it made and iterate.
 - The folder is remembered; after a browser restart click **Reconnect**.
 
-**MCP server** — `.mcp.json` registers `ascii-studio` (`pnpm mcp`) for Claude Code started in this repo: `studio_guide`, `list_gallery`, `get_gallery_piece`, `validate_piece`, `render_piece` (headless ASCII frames of worlds / modelled scenes at chosen times, no browser), `list_pieces`, `read_piece` (with the studio's `.frame.txt`), `write_piece` (validate, normalise, save, preview). It works in `ASCII_STUDIO_DIR` or the working directory; see `docs/local-claude.md` to point it at another folder.
+**MCP server** — `.mcp.json` registers `ohmyascii-studio` (`pnpm mcp`) for Claude Code started in this repo: `studio_guide`, `list_gallery`, `get_gallery_piece`, `validate_piece`, `render_piece` (headless ASCII frames of worlds / modelled scenes at chosen times, no browser), `list_pieces`, `read_piece` (with the studio's `.frame.txt`), `write_piece` (validate, normalise, save, preview). It works in `OHMYASCII_STUDIO_DIR` or the working directory; see `docs/local-claude.md` to point it at another folder.
 
-The `ascii-studio` skill (`skills/ascii-studio/SKILL.md`) teaches agents the format, every config key and scene modelling. `pnpm install` mirrors `skills/` into `.claude/skills/` and `.agents/skills/` (or run `pnpm skills:sync`). Details: `docs/studio-folder.md`.
+The `ohmyascii-studio` skill (`skills/ohmyascii-studio/SKILL.md`) teaches agents the format, every config key and scene modelling. `pnpm install` mirrors `skills/` into `.claude/skills/` and `.agents/skills/` (or run `pnpm skills:sync`). Details: `docs/studio-folder.md`.
 
 ## Studio extras
 
 - **Share link** (Export → Share link, or `s`) encodes the config and preset/text source in the URL hash. Uploaded files aren't included.
-- **Copy text** (Export → Copy text, or `t`) copies the current frame as plain-text ASCII. `AsciiMeshHandle.getText()` exposes the same for your own code.
+- **Copy text** (Export → Copy text, or `t`) copies the current frame as plain-text ASCII. `OhMyAsciiHandle.getText()` exposes the same for your own code.
 - **Video** (Export → Video) records a 5-second WebM of the canvas (worlds: exactly one loop, up to 30 s).
 - **Paste** an image or image URL anywhere, or drag an image in from another tab, to convert it.
 - **Shortcuts** (modeller keys above): `space` pause · `r` replay · `u` upload · `x` randomize look · `c` copy code · `s` share · `t` copy text · `f` fullscreen · `⌘Z`/`⇧⌘Z` undo/redo · `?` help.
