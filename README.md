@@ -13,7 +13,7 @@ pnpm test           # vitest: modelling, worlds (animation, geometry, fields, re
 ## The site
 
 - **`/`** — a chat-first landing. The composer is a launcher: describe a scene and the studio opens with the AI art director already building it; keep chatting there to refine it ("make it snow").
-- **Gallery** — under the home composer, 28 tuned scenes, the 7 built-in marks and type examples each render as a live card; clicking one opens the studio on it.
+- **Gallery** — under the home composer, 36 tuned scenes, the 7 built-in marks and type examples each render as a live card; clicking one opens the studio on it.
 - **`/studio`** — the full studio (everything below), where the AI chat lives. Deep links: `/studio?q=<prompt>` starts a fresh AI scene, `/studio#w=<preset key>` (e.g. `#w=orrery`) opens a gallery creation, `/studio#s=…` share links restore config + source + world.
 
 AI scene generation (optional) has two engines:
@@ -77,7 +77,7 @@ How it works: every shape and sculpt dab is a signed distance function; the scen
 
 Source → **Compose a 2D / 3D scene** switches to a *world*: many objects, each with its own geometry, colours, glyphs and animation, over generative backgrounds, seen through an animated camera.
 
-- **Gallery** — 28 tuned scenes to start from: Orrery, Ocean sunset, Koi pond (2D), Aurora peaks, Galaxy, Double helix, Campfire, Warp tunnel, Zen garden, Neon rain, Lotus mandala (2D), Jellyfish, Synthwave, Lighthouse storm, Black hole, Firefly grove, Winter village, Earthrise, Balloon dawn, Glyph rain, Volcano, Ringed giant, Atom, Lava lamp, Desert night, Snow summit, Torus knot, Heartbeat.
+- **Gallery** — 36 tuned scenes to start from: Orrery, Ocean sunset, Koi pond (2D), Aurora peaks, Galaxy, Double helix, Campfire, Warp tunnel, Zen garden, Neon rain, Lotus mandala (2D), Jellyfish, Synthwave, Lighthouse storm, Black hole, Firefly grove, Winter village, Earthrise, Balloon dawn, Glyph rain, Volcano, Ringed giant, Atom, Lava lamp, Desert night, Snow summit, Torus knot, Heartbeat, Eclipse, Windmill, Crystal cave, Coral reef, Tornado, Jack-o’-lantern, Liftoff, Close encounter.
 - **Objects** — solids, 2D shapes (circle, ring, star, polygon, heart, moon, petal…, with pillow bevels), text, images, tubes along curves (helix, knot, lissajous, spiral), terrain (hills, mountains, dunes, a live ocean), particles (stars, snow, rain, fireflies, embers, galaxy, planetary ring, dust) and anything built in the modeller (**+ Modelled object**).
 - **Material** — lit and shadow colour, per-object glyph ramp, self-lit amount, colour by height (sunsets, flames).
 - **Animation** — spin, orbit, bob, pulse, sway, drift, keyframes, plus wave / twist deformers; stack as many as you like. **Arrays** repeat an object in rings, rows and spirals with staggered timing (`phase`) and random heights (`jitter`).

@@ -41,7 +41,7 @@ studio links without pulling in the studio component.
 │  big composer (engine toggle · send),        │
 │  idea chips → each opens /studio?q=…         │
 ├──────────────────────────────────────────────┤
-│  Gallery — 28 scenes + 7 marks + 2 type,     │
+│  Gallery — 36 scenes + 7 marks + 2 type,     │
 │  grid 1/2/3 cols, click → /studio#w=<key>    │
 ├──────────────────────────────────────────────┤
 │  footer: shadcn install one-liner            │

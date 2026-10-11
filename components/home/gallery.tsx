@@ -23,10 +23,8 @@ function useInView<T extends HTMLElement>() {
     if (!el) return
     const io = new IntersectionObserver(
       (entries) => {
-        if (entries.some((e) => e.isIntersecting)) {
-          setInView(true)
-          io.disconnect()
-        }
+        // Mount only while near the viewport — 40+ live canvases at once starve the frame budget.
+        setInView(entries[entries.length - 1].isIntersecting)
       },
       { rootMargin: '300px' },
     )
@@ -102,7 +100,7 @@ function GalleryCard({ card }: { card: CardSpec }) {
       className="group block border border-border transition-colors hover:border-foreground focus-visible:outline focus-visible:outline-1 focus-visible:outline-dashed focus-visible:-outline-offset-4"
     >
       <div ref={ref} className="aspect-[16/10] w-full overflow-hidden border-b border-dashed border-border">
-        {inView && <OhMyAscii source={card.source} config={{ ...card.config, interactive: false }} className="h-full w-full" label={`${card.label} — animated ASCII render: ${card.blurb}`} />}
+        {inView && <OhMyAscii source={card.source} config={{ ...card.config, interactive: false, intro: 0 }} className="h-full w-full" label={`${card.label} — animated ASCII render: ${card.blurb}`} />}
       </div>
       <div className="flex flex-col gap-0.5 px-3 py-2.5">
         <span className="text-xs tracking-widest text-foreground uppercase">{card.label}</span>
