@@ -108,14 +108,14 @@ export const WORLD_PRESETS: WorldPreset[] = [
       name: 'Ocean sunset',
       duration: 20,
       fit: 1.1,
-      camera: { rot: [-6, 0, 0], zoom: 1, fov: 0.35, pan: [0, 0.15], anim: [] },
+      camera: { rot: [-6, 0, 0], zoom: 1, fov: 0.35, pan: [0, -0.1], anim: [] },
       fields: [
         f('gradient', { charset: ' .·:-', colors: ['#12061f', '#5a1f5e', '#d6456b', '#ffb36b'], angle: -90, scale: 0.75, intensity: 1 }),
         f('stars', { colors: ['#4a2c6a', '#ffe6f0'], scale: 0.5 }),
       ],
       objects: [
-        o('flat', { type: 'circle', bevel: 0 }, { name: 'Sun', pos: v3(0, 0.12, -3), scale: u(1.5), color: '#fff3b0', shadow: '#ff3d6e', emissive: 1, tint: 'height', charset: '#', anim: [b('bob', { amp: 0.06, speed: 1 / 20 })] }),
-        o('flat', { type: 'rect', bevel: 0 }, { name: 'Sun stripes', pos: v3(0, 0.3, -2.95), scale: v3(1.6, 0.03, 1), color: '#12061f', charset: ' ', array: arr({ count: 6, step: v3(0, -0.1, 0), grow: 1.13 }), anim: [b('bob', { amp: 0.06, speed: 1 / 20 })] }),
+        o('flat', { type: 'circle', bevel: 0 }, { name: 'Sun', pos: v3(0, 0.14, -2), scale: u(1.6), color: '#fff3b0', shadow: '#ff3d6e', emissive: 1, tint: 'height', charset: '#', anim: [b('bob', { amp: 0.06, speed: 1 / 20 })] }),
+        o('flat', { type: 'rect', bevel: 0 }, { name: 'Sun stripes', pos: v3(0, 0.32, -1.95), scale: v3(1.6, 0.03, 1), color: '#12061f', charset: ' ', array: arr({ count: 6, step: v3(0, -0.1, 0), grow: 1.13 }), anim: [b('bob', { amp: 0.06, speed: 1 / 20 })] }),
         o('terrain', { type: 'ocean', amp: 0.045, freq: 5, speed: 1, seed: 2 }, { name: 'Sea', pos: v3(0, -0.42, -0.6), scale: v3(7, 1, 4.5), color: '#ffc69a', shadow: '#3a1250', charset: '.·-~=≈' }),
         o('flat', { type: 'circle', bevel: 0.4 }, { name: 'Clouds', pos: v3(-1.6, 0.85, -2), scale: v3(0.9, 0.16, 1), color: '#ff9fb0', shadow: '#3a1446', charset: ' .:-=', array: arr({ count: 4, step: v3(1.15, 0.13, 0), grow: 0.85 }), anim: [b('drift', { vel: v3(0.05, 0, 0), wrap: 3 })] }),
       ],
@@ -202,13 +202,13 @@ export const WORLD_PRESETS: WorldPreset[] = [
     key: 'dna',
     label: 'Double helix',
     blurb: 'A turning DNA strand with base-pair rungs in a drifting particle field.',
-    config: { ...BASE, bg: '#020a10', charset: ' .:-=+*#%@', lightAzimuth: -40, lightElevation: 30, ambient: 0.12 },
+    config: { ...BASE, bg: '#020a10', charset: ' .:-=+*#%@', lightAzimuth: -40, lightElevation: 30, ambient: 0.3 },
     world: () => ({
       name: 'Double helix',
       duration: 12,
-      fit: 1.75,
-      camera: { rot: [-8, 0, -14], zoom: 1, fov: 0.3, pan: [0, 0], anim: [b('sway', { axis: 'z', amp: 5, speed: 1 / 12 })] },
-      fields: [f('vortex', { charset: ' .·', colors: ['#020a10', '#0b2a3a', '#1f6f8b'], intensity: 0.7, speed: 0.5, scale: 0.8 })],
+      fit: 1.3,
+      camera: { rot: [-8, 0, -64], zoom: 1, fov: 0.3, pan: [0, 0], anim: [b('sway', { axis: 'z', amp: 5, speed: 1 / 12 })] },
+      fields: [f('vortex', { charset: ' .·', colors: ['#020a10', '#0b2a3a', '#1f6f8b'], intensity: 0.35, speed: 0.5, scale: 0.8 })],
       objects: [
         // Strand angle a(y) = 720°·(y/3 + 0.5); a rung along (cos a, 0, sin a) is Ry(90° − a)·Rx(90°).
         o('curve', { type: 'helix', turns: 2, p: 2, tube: 0.055 }, { name: 'Backbone', scale: v3(0.9, 3, 0.9), color: '#6ef0ff', shadow: '#03202a', anim: [b('spin', { speed: 30 })] }),
@@ -223,7 +223,7 @@ export const WORLD_PRESETS: WorldPreset[] = [
     key: 'campfire',
     label: 'Campfire',
     blurb: 'Flames lick crossed logs inside a ring of stones; embers rise to the stars.',
-    config: { ...BASE, bg: '#06040a', charset: ' .:-=+*#%@', lightAzimuth: 20, lightElevation: 12, ambient: 0.1, depthFade: 0.25 },
+    config: { ...BASE, bg: '#06040a', charset: ' .:-=+*#%@', lightAzimuth: 20, lightElevation: 12, ambient: 0.28, depthFade: 0.25 },
     world: () => ({
       name: 'Campfire',
       duration: 12,
@@ -237,9 +237,9 @@ export const WORLD_PRESETS: WorldPreset[] = [
         o('flat', { type: 'circle', bevel: 0 }, { name: 'Ground', pos: v3(0, -0.46, 0), rot: v3(-90, 0, 0), scale: u(2.4), color: '#2a1a14', shadow: '#0a0605', charset: ' ..,' }),
         o('shape', { type: 'sphere' }, { name: 'Stones', pos: v3(0, -0.42, 0), scale: v3(0.17, 0.12, 0.15), color: '#a49a94', shadow: '#120e0c', array: arr({ count: 11, offset: v3(0.55, 0, 0), rot: v3(0, 360 / 11, 0) }) }),
         o('shape', { type: 'cylinder' }, { name: 'Logs', pos: v3(0, -0.36, 0), rot: v3(0, 0, 78), scale: v3(0.09, 0.75, 0.09), color: '#8a5a3a', shadow: '#140804', array: arr({ count: 3, rot: v3(0, 60, 0) }) }),
-        o('flat', { type: 'petal', inner: 0.55, bevel: 0.3 }, { name: 'Flames', pos: v3(0, -0.1, 0), scale: v3(0.3, 0.6, 0.3), color: '#ff3d0a', shadow: '#fff0a8', emissive: 0.6, tint: 'height', charset: ' .:-=+*#%@', array: arr({ count: 5, rot: v3(0, 36, 0), phase: 0.27 }), anim: [b('pulse', { amp: 0.14, speed: 1.1 }), b('wave', { axis: 'x', amp: 0.08, freq: 5, speed: 1.5 })] }),
-        o('flat', { type: 'petal', inner: 0.5, bevel: 0.3 }, { name: 'Flame core', pos: v3(0, -0.2, 0.05), scale: v3(0.16, 0.3, 0.16), color: '#ffffff', shadow: '#ffb03d', emissive: 0.8, anim: [b('pulse', { amp: 0.18, speed: 1.6 })] }),
-        o('particles', { type: 'embers', count: 220, speed: 1.4, seed: 9 }, { name: 'Embers', pos: v3(0, 0.45, 0), scale: v3(0.7, 1.6, 0.7), color: '#ffd27a', shadow: '#5a1200', charset: ' .·*' }),
+        o('flat', { type: 'petal', inner: 0.55, bevel: 0.3 }, { name: 'Flames', pos: v3(0, -0.1, 0), scale: v3(0.3, 0.6, 0.3), color: '#ff3d0a', shadow: '#fff0a8', emissive: 1, tint: 'height', charset: ' .:-=+*#%@', array: arr({ count: 5, rot: v3(0, 36, 0), phase: 0.27 }), anim: [b('pulse', { amp: 0.14, speed: 1.1 }), b('wave', { axis: 'x', amp: 0.08, freq: 5, speed: 1.5 })] }),
+        o('flat', { type: 'petal', inner: 0.5, bevel: 0.3 }, { name: 'Flame core', pos: v3(0, -0.2, 0.05), scale: v3(0.16, 0.3, 0.16), color: '#ffffff', shadow: '#ffb03d', emissive: 1, anim: [b('pulse', { amp: 0.18, speed: 1.6 })] }),
+        o('particles', { type: 'embers', count: 400, speed: 1.4, seed: 9 }, { name: 'Embers', pos: v3(0, 0.45, 0), scale: v3(0.7, 1.6, 0.7), color: '#ffd27a', shadow: '#5a1200', charset: ' .·*' }),
       ],
     }),
   },
@@ -327,7 +327,7 @@ export const WORLD_PRESETS: WorldPreset[] = [
     key: 'jellyfish',
     label: 'Jellyfish',
     blurb: 'A pulsing bell trails flowing tentacles through drifting plankton.',
-    config: { ...BASE, bg: '#020612', charset: ' .:-=+*#%@', lightAzimuth: -20, lightElevation: 60, ambient: 0.2, depthFade: 0.3 },
+    config: { ...BASE, bg: '#020612', charset: ' .:-=+*#%@', lightAzimuth: -20, lightElevation: 60, ambient: 0.4, depthFade: 0.15 },
     world: () => {
       const bell = sceneOf([
         makePrim('sphere', { pos: [0, 0, 0], scale: [1, 0.8, 1], color: '#ff9ad5' }),
@@ -338,7 +338,7 @@ export const WORLD_PRESETS: WorldPreset[] = [
       return {
         name: 'Jellyfish',
         duration: 12,
-        fit: 1.25,
+        fit: 1.05,
         camera: { rot: [-14, 0, 0], zoom: 1, fov: 0.3, pan: [0, 0.05], anim: [b('spin', { axis: 'y', speed: 30 })] },
         fields: [
           f('gradient', { charset: ' .·', colors: ['#010208', '#06163a', '#0f3a6a'], angle: 90, scale: 0.8 }),
@@ -379,7 +379,7 @@ export const WORLD_PRESETS: WorldPreset[] = [
     key: 'lighthouse',
     label: 'Lighthouse storm',
     blurb: 'A lighthouse sweeps twin beams over a heavy sea as the rain comes in sideways.',
-    config: { ...BASE, bg: '#060a14', charset: ' .:-=+*#%@', lightAzimuth: 150, lightElevation: 30, ambient: 0.3, depthFade: 0.2, cellSize: 6 },
+    config: { ...BASE, bg: '#060a14', charset: ' .:-=+*#%@', lightAzimuth: 150, lightElevation: 30, ambient: 0.4, depthFade: 0.2, cellSize: 6 },
     world: () => ({
       name: 'Lighthouse storm',
       duration: 16,
@@ -394,11 +394,11 @@ export const WORLD_PRESETS: WorldPreset[] = [
         o('terrain', { type: 'ocean', amp: 0.06, freq: 5.5, speed: 1.4, seed: 6 }, { name: 'Sea', pos: v3(0.4, -0.62, -0.5), scale: v3(7, 1, 3.4), color: '#7a9cc0', shadow: '#0a1626', charset: ' .·-~≈' }),
         o('shape', { type: 'sphere' }, { name: 'Rock', pos: v3(-0.72, -0.5, 0.25), scale: v3(0.62, 0.3, 0.45), color: '#3c4450', shadow: '#0a0e16', charset: ' .:-#' }),
         o('shape', { type: 'sphere' }, { name: 'Rock 2', pos: v3(-0.32, -0.6, 0.6), scale: v3(0.3, 0.16, 0.24), color: '#333b46', shadow: '#0a0e16', charset: ' .:-#' }),
-        o('shape', { type: 'cylinder' }, { name: 'Tower', pos: v3(-0.72, -0.05, 0.25), scale: v3(0.13, 0.85, 0.13), color: '#f4f0e6', shadow: '#5a6070', charset: '-=+*#%' }),
-        o('shape', { type: 'cylinder' }, { name: 'Band', pos: v3(-0.72, 0.08, 0.25), scale: v3(0.14, 0.12, 0.14), color: '#c0392b', shadow: '#3a0e0a', charset: '#%@*' }),
-        o('shape', { type: 'cylinder' }, { name: 'Lamp', pos: v3(-0.72, 0.44, 0.25), scale: v3(0.09, 0.1, 0.09), color: '#ffe9a8', shadow: '#a87414', emissive: 1, charset: '#%@' }),
-        o('shape', { type: 'cone' }, { name: 'Roof', pos: v3(-0.72, 0.53, 0.25), scale: v3(0.12, 0.1, 0.12), color: '#8a2f28', shadow: '#2a0c08', charset: '#' }),
-        o('flat', { type: 'triangle', bevel: 0 }, { name: 'Beams', pos: v3(-0.72, 0.44, 0.25), rot: v3(-90, 0, 0), scale: v3(0.36, 1.5, 1), color: '#ffe9a8', shadow: '#4a4030', emissive: 0.85, charset: ' .:-', array: arr({ count: 2, rot: v3(0, 180, 0), spin: 55 }) }),
+        o('shape', { type: 'cylinder' }, { name: 'Tower', pos: v3(-0.72, -0.05, 0.25), scale: v3(0.2, 0.95, 0.2), color: '#f4f0e6', shadow: '#5a6070', charset: '-=+*#%' }),
+        o('shape', { type: 'cylinder' }, { name: 'Band', pos: v3(-0.72, 0.08, 0.25), scale: v3(0.21, 0.12, 0.21), color: '#c0392b', shadow: '#3a0e0a', charset: '#%@*' }),
+        o('shape', { type: 'cylinder' }, { name: 'Lamp', pos: v3(-0.72, 0.44, 0.25), scale: v3(0.14, 0.12, 0.14), color: '#ffe9a8', shadow: '#a87414', emissive: 1, charset: '#%@' }),
+        o('shape', { type: 'cone' }, { name: 'Roof', pos: v3(-0.72, 0.53, 0.25), scale: v3(0.18, 0.12, 0.18), color: '#8a2f28', shadow: '#2a0c08', charset: '#' }),
+        o('flat', { type: 'triangle', bevel: 0 }, { name: 'Beams', pos: v3(-0.72, 0.44, 0.25), rot: v3(-90, 0, 0), scale: v3(0.36, 1.5, 1), color: '#ffe9a8', shadow: '#4a4030', emissive: 1, charset: '.:-=', array: arr({ count: 2, rot: v3(0, 180, 0), spin: 55 }) }),
       ],
     }),
   },
@@ -487,19 +487,19 @@ export const WORLD_PRESETS: WorldPreset[] = [
     key: 'earthrise',
     label: 'Earthrise',
     blurb: 'A living blue Earth hanging over grey regolith, in a dense star field.',
-    config: { ...BASE, bg: '#01020a', charset: ' .:-=+*#%@', lightAzimuth: 30, lightElevation: 40, ambient: 0.1, depthFade: 0.3 },
+    config: { ...BASE, bg: '#01020a', charset: ' .:-=+*#%@', lightAzimuth: 30, lightElevation: 40, ambient: 0.22, depthFade: 0.3 },
     world: () => ({
       name: 'Earthrise',
       duration: 24,
       fit: 1.3,
-      camera: { rot: [-14, 0, 0], zoom: 1, fov: 0.3, pan: [0, 0.1], anim: [b('sway', { axis: 'y', amp: 10, speed: 1 / 24 })] },
+      camera: { rot: [-14, 0, 0], zoom: 1, fov: 0.3, pan: [0, 0], anim: [b('sway', { axis: 'y', amp: 10, speed: 1 / 24 })] },
       fields: [f('stars', { colors: ['#2a2a3a', '#ffffff'], scale: 1.4 })],
       objects: [
         o('terrain', { type: 'dunes', amp: 0.05, freq: 6, seed: 9 }, { name: 'Regolith', pos: v3(0, -0.62, 0.3), scale: v3(6.4, 1, 2.2), color: '#b8bcc6', shadow: '#1a1c26', charset: ' .·:-=' }),
-        o('shape', { type: 'sphere' }, { name: 'Earth', pos: v3(0.5, 0.6, -2.6), scale: u(0.85), color: '#5ab4f0', shadow: '#0a2c58', emissive: 0.35, charset: ' .·:-=+*#%@' }),
-        o('shape', { type: 'sphere' }, { name: 'Land', pos: v3(0.5, 0.6, -2.6), scale: v3(0.5, 0.3, 0.5), color: '#3aa06a', shadow: '#0a3a20', emissive: 0.3, charset: ' .:-#', anim: [b('orbit', { radius: 0.35, speed: 6, tilt: 18, phase: 40 })] }),
-        o('shape', { type: 'sphere' }, { name: 'Land 2', pos: v3(0.5, 0.6, -2.6), scale: v3(0.34, 0.22, 0.34), color: '#4ab47a', shadow: '#0a3a20', emissive: 0.3, charset: ' .:-#', anim: [b('orbit', { radius: 0.3, speed: 6, tilt: -24, phase: 210 })] }),
-        o('shape', { type: 'sphere' }, { name: 'Clouds', pos: v3(0.5, 0.6, -2.6), scale: v3(0.55, 0.18, 0.55), color: '#ffffff', shadow: '#8ab0d0', emissive: 0.5, charset: ' .·', anim: [b('orbit', { radius: 0.52, speed: 4, tilt: 8, phase: 120 })] }),
+        o('shape', { type: 'sphere' }, { name: 'Earth', pos: v3(0.45, 0.3, -1.6), scale: u(0.85), color: '#5ab4f0', shadow: '#0a2c58', emissive: 0.35, charset: ' .·:-=+*#%@' }),
+        o('shape', { type: 'sphere' }, { name: 'Land', pos: v3(0.45, 0.3, -1.6), scale: v3(0.5, 0.3, 0.5), color: '#3aa06a', shadow: '#0a3a20', emissive: 0.3, charset: ' .:-#', anim: [b('orbit', { radius: 0.35, speed: 6, tilt: 18, phase: 40 })] }),
+        o('shape', { type: 'sphere' }, { name: 'Land 2', pos: v3(0.45, 0.3, -1.6), scale: v3(0.34, 0.22, 0.34), color: '#4ab47a', shadow: '#0a3a20', emissive: 0.3, charset: ' .:-#', anim: [b('orbit', { radius: 0.3, speed: 6, tilt: -24, phase: 210 })] }),
+        o('shape', { type: 'sphere' }, { name: 'Clouds', pos: v3(0.45, 0.3, -1.6), scale: v3(0.55, 0.18, 0.55), color: '#ffffff', shadow: '#8ab0d0', emissive: 0.5, charset: ' .·', anim: [b('orbit', { radius: 0.52, speed: 4, tilt: 8, phase: 120 })] }),
       ],
     }),
   },
@@ -507,10 +507,10 @@ export const WORLD_PRESETS: WorldPreset[] = [
     key: 'balloons',
     label: 'Balloon dawn',
     blurb: 'Hot air balloons in two-tone enamel drifting over golden hills at sunrise.',
-    config: { ...BASE, bg: '#160a1e', charset: ' .:-=+*#%@', lightAzimuth: 170, lightElevation: 25, ambient: 0.22, depthFade: 0.25, cellSize: 6 },
+    config: { ...BASE, bg: '#160a1e', charset: ' .:-=+*#%@', lightAzimuth: 25, lightElevation: 30, ambient: 0.4, depthFade: 0.25, cellSize: 6 },
     world: () => {
       const balloon = (x: number, y: number, z: number, s: number, top: string, bottom: string, phase: number): WObject[] => [
-        o('shape', { type: 'sphere' }, { name: 'Envelope', pos: v3(x, y, z), scale: v3(0.5 * s, 0.56 * s, 0.5 * s), color: top, shadow: bottom, tint: 'height', charset: ' .:-=+*#%', anim: [b('bob', { amp: 0.05, speed: 1 / 9, phase }), b('sway', { axis: 'z', amp: 4, speed: 1 / 12, phase })] }),
+        o('shape', { type: 'sphere' }, { name: 'Envelope', pos: v3(x, y, z), scale: v3(0.5 * s, 0.56 * s, 0.5 * s), color: top, shadow: bottom, tint: 'height', emissive: 0.25, charset: '.:-=+*#%@', anim: [b('bob', { amp: 0.05, speed: 1 / 9, phase }), b('sway', { axis: 'z', amp: 4, speed: 1 / 12, phase })] }),
         o('shape', { type: 'box' }, { name: 'Basket', pos: v3(x, y - 0.52 * s, z), scale: v3(0.09 * s, 0.07 * s, 0.09 * s), color: '#8a5a34', shadow: '#241206', charset: '#', anim: [b('bob', { amp: 0.05, speed: 1 / 9, phase }), b('sway', { axis: 'z', amp: 4, speed: 1 / 12, phase })] }),
       ]
       return {
@@ -546,8 +546,8 @@ export const WORLD_PRESETS: WorldPreset[] = [
       camera: { rot: [0, 0, 0], zoom: 1, fov: 0, pan: [0, 0], anim: [] },
       fields: [f('rain', { charset: ' ｱｲｳｴｵｶｷｸｹｺｻｼｽ01<>/#$%', colors: ['#03180c', '#1e8a4a', '#7dff9a', '#d8ffe6'], intensity: 1.1, speed: 1.6, scale: 0.5 })],
       objects: [
-        o('text', { text: 'WAKE UP', fontKey: 'jetbrains', weight: 800, depth: 0.12 }, { name: 'Prompt', pos: v3(0, 0.08, 0), scale: v3(0.95, 0.34, 1), color: '#b8ffcf', shadow: '#0a3a1c', emissive: 1, charset: '#%@' }),
-        o('text', { text: '_', fontKey: 'jetbrains', weight: 800, depth: 0 }, { name: 'Cursor', pos: v3(0.72, -0.09, 0.1), scale: v3(0.16, 0.26, 1), color: '#7dff9a', emissive: 1, charset: '#', anim: [b('keys', { loop: 1.2, ease: 'linear', keys: [{ t: 0, scale: 1 }, { t: 0.55, scale: 1 }, { t: 0.56, scale: 0.05 }, { t: 1.19, scale: 0.05 }] })] }),
+        o('text', { text: 'WAKE UP', fontKey: 'jetbrains', weight: 800, depth: 0.12 }, { name: 'Prompt', pos: v3(-0.05, 0.05, 0), scale: v3(1.7, 0.6, 1), color: '#b8ffcf', shadow: '#0a3a1c', emissive: 1, charset: '#%@' }),
+        o('text', { text: '_', fontKey: 'jetbrains', weight: 800, depth: 0 }, { name: 'Cursor', pos: v3(0.98, -0.1, 0.1), scale: v3(0.24, 0.4, 1), color: '#7dff9a', emissive: 1, charset: '#', anim: [b('keys', { loop: 1.2, ease: 'linear', keys: [{ t: 0, scale: 1 }, { t: 0.55, scale: 1 }, { t: 0.56, scale: 0.05 }, { t: 1.19, scale: 0.05 }] })] }),
       ],
     }),
   },
@@ -605,7 +605,7 @@ export const WORLD_PRESETS: WorldPreset[] = [
       fields: [f('grid', { charset: ' .', colors: ['#020a12', '#0e2a3a'], intensity: 0.4, scale: 1 })],
       objects: [
         o('shape', { type: 'sphere' }, { name: 'Nucleus', scale: u(0.4), color: '#ff7a5a', shadow: '#5a1408', charset: '.:-=+*#%@', anim: [b('pulse', { amp: 0.08, speed: 1 })] }),
-        ...[0, 60, 120].map((r, i) => o('flat', { type: 'ring', inner: 0.96, bevel: 0 }, { name: `Orbit ${i + 1}`, rot: v3(70, r, 0), scale: u(1.8), color: '#5ad8ff', shadow: '#0a3a5a', emissive: 0.6, charset: '.·:' })),
+        o('flat', { type: 'ring', inner: 0.96, bevel: 0 }, { name: 'Orbits', rot: v3(55, 0, 0), scale: u(1.8), color: '#5ad8ff', shadow: '#0a3a5a', emissive: 0.8, charset: '.·:', array: arr({ count: 3, rot: v3(0, 0, 60) }) }),
         ...[0, 60, 120].map((r, i) =>
           o('shape', { type: 'sphere' }, { name: `Electron ${i + 1}`, scale: u(0.06), color: '#e8fbff', shadow: '#5ad8ff', emissive: 1, charset: '#@', anim: [b('orbit', { radius: 0.9, speed: 140 + i * 30, tilt: 70 - i * 10, phase: r })] }),
         ),
@@ -622,9 +622,9 @@ export const WORLD_PRESETS: WorldPreset[] = [
       duration: 16,
       fit: 1.1,
       camera: { rot: [0, 0, 0], zoom: 1, fov: 0, pan: [0, 0], anim: [] },
-      fields: [f('metaballs', { charset: ' .:-=+*#%@', colors: ['#12040e', '#ff3a6a', '#ffb04a', '#fff0b0'], intensity: 1.1, scale: 0.6, speed: 0.5 })],
+      fields: [f('metaballs', { charset: ' .:-=+*#%@', colors: ['#12040e', '#ff3a6a', '#ffb04a', '#fff0b0'], intensity: 1, scale: 1.4, speed: 0.5 })],
       objects: [
-        o('flat', { type: 'rect', bevel: 0 }, { name: 'Base', pos: v3(0, -1.02, 0), scale: v3(3, 0.08, 1), color: '#c0c8d4', shadow: '#202430', charset: '=#' }),
+        o('particles', { type: 'embers', count: 160, speed: 0.5, seed: 4 }, { name: 'Bubbles', scale: v3(2.4, 2, 1), color: '#ffd0a0', shadow: '#ff3a6a', emissive: 1, charset: '.·o' }),
       ],
     }),
   },
@@ -632,7 +632,7 @@ export const WORLD_PRESETS: WorldPreset[] = [
     key: 'desert',
     label: 'Desert night',
     blurb: 'Rolling dunes under a crescent moon, with a lone cactus keeping watch.',
-    config: { ...BASE, bg: '#060714', charset: ' .:-=+*#%@', lightAzimuth: -70, lightElevation: 25, ambient: 0.25, depthFade: 0.3 },
+    config: { ...BASE, bg: '#060714', charset: ' .:-=+*#%@', lightAzimuth: -70, lightElevation: 25, ambient: 0.35, depthFade: 0.3 },
     world: () => ({
       name: 'Desert night',
       duration: 20,
@@ -644,10 +644,10 @@ export const WORLD_PRESETS: WorldPreset[] = [
       ],
       objects: [
         o('terrain', { type: 'dunes', amp: 0.18, freq: 2.2, speed: 0.15, seed: 8 }, { name: 'Dunes', pos: v3(0, -0.55, -0.4), scale: v3(7, 1, 3.4), color: '#e0b07a', shadow: '#2a1a24', tint: 'height', charset: ' .·:-=+' }),
-        o('flat', { type: 'moon', bevel: 0 }, { name: 'Moon', pos: v3(-0.8, 0.62, -2.4), scale: u(0.32), color: '#fff4d0', shadow: '#c0a060', emissive: 1, charset: '#%@' }),
-        o('shape', { type: 'cylinder' }, { name: 'Cactus', pos: v3(0.7, -0.18, 0.4), scale: v3(0.06, 0.4, 0.06), color: '#4aa06a', shadow: '#0a2a14', charset: ':;+#' }),
-        o('shape', { type: 'cylinder' }, { name: 'Arm', pos: v3(0.79, -0.06, 0.4), scale: v3(0.04, 0.16, 0.04), color: '#4aa06a', shadow: '#0a2a14', charset: ':;+#' }),
-        o('shape', { type: 'cylinder' }, { name: 'Arm 2', pos: v3(0.62, -0.12, 0.4), scale: v3(0.04, 0.12, 0.04), color: '#4aa06a', shadow: '#0a2a14', charset: ':;+#' }),
+        o('flat', { type: 'moon', bevel: 0 }, { name: 'Moon', pos: v3(-0.8, 0.62, -2.4), scale: u(0.5), color: '#fff4d0', shadow: '#c0a060', emissive: 1, charset: '#%@' }),
+        o('shape', { type: 'cylinder' }, { name: 'Cactus', pos: v3(0.7, -0.18, 0.4), scale: v3(0.09, 0.55, 0.09), color: '#4aa06a', shadow: '#0a2a14', charset: ':;+#' }),
+        o('shape', { type: 'cylinder' }, { name: 'Arm', pos: v3(0.82, -0.02, 0.4), scale: v3(0.06, 0.22, 0.06), color: '#4aa06a', shadow: '#0a2a14', charset: ':;+#' }),
+        o('shape', { type: 'cylinder' }, { name: 'Arm 2', pos: v3(0.59, -0.1, 0.4), scale: v3(0.06, 0.16, 0.06), color: '#4aa06a', shadow: '#0a2a14', charset: ':;+#' }),
       ],
     }),
   },
@@ -740,7 +740,7 @@ export const WORLD_PRESETS: WorldPreset[] = [
       objects: [
         o('terrain', { type: 'hills', amp: 0.06, freq: 2, seed: 9 }, { name: 'Field', pos: v3(0, -0.62, -0.4), scale: v3(6, 1, 3), color: '#4aa04a', shadow: '#0a2a10', charset: ' .:-=' }),
         o('shape', { type: 'box' }, { name: 'Tulips', pos: v3(-2.2, -0.56, 0.6), scale: v3(0.1, 0.03, 1.6), color: '#ff4a6a', shadow: '#5a0a1a', emissive: 0.3, charset: '.:*', array: arr({ count: 10, step: v3(0.48, 0, 0) }) }),
-        o('shape', { type: 'cone' }, { name: 'Tower', pos: v3(0.35, -0.3, -0.2), scale: v3(0.55, 1.1, 0.55), color: '#e8d8b8', shadow: '#3a2a1a', charset: '.:-=+*#' }),
+        o('shape', { type: 'cone' }, { name: 'Tower', pos: v3(0.35, -0.3, -0.2), scale: v3(0.55, 1.1, 0.55), color: '#b0603a', shadow: '#2a0e06', charset: '.:-=+*#' }),
         o('shape', { type: 'cone' }, { name: 'Cap', pos: v3(0.35, 0.33, -0.2), scale: v3(0.3, 0.24, 0.3), color: '#8a3a2a', shadow: '#2a0a08', charset: '=#' }),
         o('flat', { type: 'cross', inner: 0.15, bevel: 0 }, { name: 'Sails', pos: v3(0.35, 0.3, 0.12), scale: u(1.35), color: '#f4ecd8', shadow: '#5a4a3a', charset: ':-=+#', anim: [b('spin', { axis: 'z', speed: 40 })] }),
       ],
@@ -790,16 +790,16 @@ export const WORLD_PRESETS: WorldPreset[] = [
     key: 'tornado',
     label: 'Tornado',
     blurb: 'A twisting funnel of dust tearing across the plains under a bruised sky.',
-    config: { ...BASE, bg: '#0e0e12', charset: ' .:-=+*#%@', lightAzimuth: 50, lightElevation: 30, ambient: 0.3, depthFade: 0.3 },
+    config: { ...BASE, bg: '#0e0e12', charset: ' .:-=+*#%@', lightAzimuth: 50, lightElevation: 30, ambient: 0.45, depthFade: 0.3 },
     world: () => ({
       name: 'Tornado',
       duration: 12,
       fit: 1.25,
       camera: { rot: [-6, 0, 0], zoom: 1, fov: 0.3, pan: [0, 0.05], anim: [] },
-      fields: [f('gradient', { charset: ' .·:', colors: ['#0e0e12', '#2a2a3a', '#5a4a3a'], angle: 90, scale: 0.9, intensity: 0.55 })],
+      fields: [f('gradient', { charset: ' .·:', colors: ['#0e0e12', '#2a2a3a', '#5a4a3a'], angle: 90, scale: 0.9, intensity: 0.4 })],
       objects: [
         o('terrain', { type: 'hills', amp: 0.04, freq: 2, seed: 7 }, { name: 'Plains', pos: v3(0, -0.66, -0.4), scale: v3(6, 1, 3), color: '#8a7a4a', shadow: '#1a1408', charset: ' .:-' }),
-        o('shape', { type: 'cone' }, { name: 'Funnel', pos: v3(0, 0.05, 0), rot: v3(180, 0, 0), scale: v3(1, 1.4, 1), color: '#b0a890', shadow: '#2a2620', charset: '.:-=+*#', anim: [b('twist', { amount: 90, speed: 0.4 }), b('spin', { axis: 'y', speed: 120 }), b('sway', { axis: 'z', amp: 6, speed: 0.3 })] }),
+        o('shape', { type: 'cone' }, { name: 'Funnel', pos: v3(0, 0.05, 0), rot: v3(180, 0, 0), scale: v3(1, 1.4, 1), color: '#e0d4b0', shadow: '#4a4030', charset: '.:-=+*#', anim: [b('twist', { amount: 90, speed: 0.4 }), b('spin', { axis: 'y', speed: 120 }), b('sway', { axis: 'z', amp: 6, speed: 0.3 })] }),
         o('particles', { type: 'dust', count: 700, speed: 2, seed: 5 }, { name: 'Debris', pos: v3(0, -0.45, 0), scale: v3(1.2, 0.5, 1.2), color: '#c0a070', shadow: '#3a2a1a', charset: '.·*', anim: [b('spin', { axis: 'y', speed: 160 })] }),
       ],
     }),
@@ -812,7 +812,7 @@ export const WORLD_PRESETS: WorldPreset[] = [
     world: () => ({
       name: 'Jack-o’-lantern',
       duration: 8,
-      fit: 1.1,
+      fit: 0.85,
       camera: { rot: [-6, 0, 0], zoom: 1, fov: 0.3, pan: [0, 0], anim: [b('sway', { axis: 'y', amp: 16, speed: 1 / 8 })] },
       fields: [
         f('noise', { charset: ' .·:', colors: ['#08040c', '#2a1a3a'], intensity: 0.4, scale: 1.4, speed: 0.3 }),
@@ -834,7 +834,7 @@ export const WORLD_PRESETS: WorldPreset[] = [
     world: () => ({
       name: 'Liftoff',
       duration: 6,
-      fit: 1.3,
+      fit: 0.95,
       camera: { rot: [0, 0, 0], zoom: 1, fov: 0.3, pan: [0, 0], anim: [] },
       fields: [f('stars', { colors: ['#1a2a4a', '#ffffff'], scale: 1.2, speed: 2 })],
       objects: [
