@@ -1,3 +1,4 @@
+import { dirname } from 'node:path'
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js'
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js'
 import { z } from 'zod'
@@ -12,9 +13,9 @@ const server = new McpServer({ name: 'ohmyascii-studio', version: '0.1.0' })
 
 const text = (t: string) => ({ content: [{ type: 'text' as const, text: t }] })
 const fail = (e: unknown) => ({ content: [{ type: 'text' as const, text: `Error: ${(e as Error).message}` }], isError: true })
-const run = (fn: () => string) => {
+const run = async (fn: () => string | Promise<string>) => {
   try {
-    return text(fn())
+    return text(await fn())
   } catch (e) {
     return fail(e)
   }
@@ -58,7 +59,7 @@ server.registerTool(
   'render_piece',
   {
     title: 'Render a piece to text',
-    description: 'Headless ASCII render of a world or modelled-scene piece at chosen times — preview composition, density and motion without the browser. Pass `piece` JSON or a `path` in the studio folder.',
+    description: 'Headless ASCII render of any piece (world, modelled scene, image, text, preset) at chosen times — preview composition, density and motion without the browser. Pass `piece` JSON or a `path` in the studio folder.',
     inputSchema: { piece: z.string().optional(), path: z.string().optional(), ...frameOpts },
     annotations: { readOnlyHint: true },
   },
@@ -66,7 +67,7 @@ server.registerTool(
     run(() => {
       const json = piece ?? (path ? files.readPiece(path).text : null)
       if (!json) throw new Error('Pass `piece` (JSON) or `path`')
-      return renderPieceText(json, opts)
+      return renderPieceText(json, { ...opts, baseDir: path ? dirname(files.resolve(path)) : files.root })
     }),
 )
 
@@ -95,11 +96,11 @@ server.registerTool(
     annotations: { destructiveHint: false, idempotentHint: true },
   },
   async ({ path, piece }) =>
-    run(() => {
+    run(async () => {
       const { written, report } = files.writePiece(path, piece)
       let preview = ''
       try {
-        preview = `\n\nPreview:\n${renderPieceText(written, { times: [1], cols: 80, rows: 32 })}`
+        preview = `\n\nPreview:\n${await renderPieceText(written, { times: [1], cols: 80, rows: 32, baseDir: dirname(files.resolve(path)) })}`
       } catch {}
       return `Saved ${path}.${report.warnings.length ? `\nWarnings:\n- ${report.warnings.join('\n- ')}` : ''}${preview}`
     }),

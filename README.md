@@ -110,9 +110,23 @@ The studio can hold a folder on disk (Folder → **Open folder**, desktop Chrome
 - After each change the rendered frame is written next to the piece as `<name>.frame.txt`, so the agent can read what it made and iterate.
 - The folder is remembered; after a browser restart click **Reconnect**.
 
-**MCP server** — `.mcp.json` registers `ohmyascii-studio` (`pnpm mcp`) for Claude Code started in this repo: `studio_guide`, `list_gallery`, `get_gallery_piece`, `validate_piece`, `render_piece` (headless ASCII frames of worlds / modelled scenes at chosen times, no browser), `list_pieces`, `read_piece` (with the studio's `.frame.txt`), `write_piece` (validate, normalise, save, preview). It works in `OHMYASCII_STUDIO_DIR` or the working directory; see `docs/local-claude.md` to point it at another folder.
+**MCP server** — `.mcp.json` registers `ohmyascii-studio` (`pnpm mcp`) for Claude Code started in this repo: `studio_guide`, `list_gallery`, `get_gallery_piece`, `validate_piece`, `render_piece` (headless ASCII frames of any piece at chosen times, no browser), `list_pieces`, `read_piece` (with the studio's `.frame.txt`), `write_piece` (validate, normalise, save, preview). It works in `OHMYASCII_STUDIO_DIR` or the working directory; see `docs/local-claude.md` to point it at another folder.
 
 The `ohmyascii-studio` skill (`skills/ohmyascii-studio/SKILL.md`) teaches agents the format, every config key and scene modelling. `pnpm install` mirrors `skills/` into `.claude/skills/` and `.agents/skills/` (or run `pnpm skills:sync`). Details: `docs/studio-folder.md`.
+
+## Terminal
+
+Every studio piece plays in the terminal in full colour: gallery worlds, models, image / text / preset pieces.
+
+```bash
+pnpm cli                                     # browse the gallery: ↑/↓ + enter, ←/→ scene, wasd orbit, q quit
+pnpm terminal:link                           # puts `ohmyascii` on your PATH
+ohmyascii ./logo.ascii.json --watch          # any piece file; reloads on save
+ohmyascii 'http://localhost:3000/studio#s=…' # studio → Terminal copies this command
+ohmyascii bake koi --seconds 8 > koi.sh      # self-playing script (or --format json | ans)
+```
+
+Embed with `openTerminalPiece(openPiece(input), { cols, rows })` from `packages/terminal` (`ohmyascii`); `frame(t)` returns ANSI lines. See `docs/terminal.md` or `ohmyascii guide`.
 
 ## Studio extras
 

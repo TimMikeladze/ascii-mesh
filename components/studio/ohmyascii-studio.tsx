@@ -836,6 +836,19 @@ export function OhMyAsciiStudio() {
   // describes; state serialising to the same thing needs no write (keeps hand formatting intact).
   const folder = useStudioFolder()
   const [activePiece, setActivePiece] = useState<string | null>(null)
+
+  // Terminal: a command that plays this piece with the `ohmyascii` CLI (docs/terminal.md). Folder
+  // pieces play from their file (with --watch, so studio edits show live); the rest via a share link.
+  const copyTerminal = useCallback(async () => {
+    if (activePiece) {
+      await copy(`ohmyascii play './${activePiece}' --watch`, 'terminal')
+      return flash('Terminal command copied — run it in the held folder; edits here reload live')
+    }
+    if (source.kind === 'upload') return flash('Uploads are not in links — hold a folder (Folder panel) so the piece is saved to a file, then copy again')
+    const url = `${location.origin}${location.pathname}#s=${encodeShare(cfg, source, scene, world)}`
+    await copy(`ohmyascii play '${url}'`, 'terminal')
+    flash('Terminal command copied — paste it into a terminal (install: see docs/terminal.md)')
+  }, [activePiece, source, cfg, scene, world, copy, flash])
   const diskRef = useRef<string | null>(null)
   const savedRef = useRef<string | null>(null)
   const pieceErrorRef = useRef<string | null>(null)
@@ -1333,6 +1346,7 @@ export function OhMyAsciiStudio() {
             onRecord={record}
             recording={recording}
             onShare={share}
+            onCopyTerminal={copyTerminal}
             copied={copied}
             folderPanel={
               folder.supported || folder.root ? (

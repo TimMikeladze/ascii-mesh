@@ -16,6 +16,13 @@ Prefer them over raw file edits: `studio_guide` (full format), `get_gallery_piec
 `validate_piece`, `render_piece` (headless text frames at any time `t` — check composition and motion
 without the studio), `list_pieces`, `read_piece` (includes the studio's latest `.frame.txt`),
 `write_piece` (validates, normalises, saves, returns a preview). Server: `scripts/mcp-server.ts`.
+Previews cover every kind of piece (world, scene, image, text, preset).
+
+## Terminal
+
+Any piece also plays in a terminal: `ohmyascii ./<slug>.ascii.json --watch` (in this repo `pnpm cli`),
+or `ohmyascii bake <piece> > out.sh` for a self-playing script. Library: `openTerminalPiece` in
+`packages/terminal`. See docs/terminal.md.
 
 ## Loop
 

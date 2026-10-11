@@ -29,15 +29,17 @@ describe('tools', () => {
     expect(r.warnings.join('\n')).toMatch(/1 object\(s\) dropped[\s\S]*Nothing animates[\s\S]*config\.nope/)
   })
 
-  it('renders worlds and modelled scenes headlessly, at several times', () => {
-    const out = renderPieceText(galleryPiece('mandala'), { times: [0, 3], cols: 60, rows: 24 })
+  it('renders every kind of piece headlessly, at several times', async () => {
+    const out = await renderPieceText(galleryPiece('mandala'), { times: [0, 3], cols: 60, rows: 24 })
     const frames = out.split(/^t = /m).filter(Boolean)
     expect(frames).toHaveLength(2)
     expect(frames[0].replace(/\s/g, '').length).toBeGreaterThan(100)
     expect(frames[0]).not.toBe(frames[1])
     const scene = JSON.stringify({ source: { kind: 'scene', scene: { v: 1, blend: 0.1, prims: [{ type: 'sphere', op: 'add', pos: [0, 0, 0], rot: [0, 0, 0], scale: [1, 1, 1], color: '#ffffff' }], dabs: [] } }, config: { gridDots: false } })
-    expect(renderPieceText(scene, { times: [0] }).replace(/\s/g, '').length).toBeGreaterThan(100)
-    expect(() => renderPieceText(JSON.stringify({ source: { kind: 'preset', key: 'star' } }))).toThrow(/only in the studio/)
+    expect((await renderPieceText(scene, { times: [0] })).replace(/\s/g, '').length).toBeGreaterThan(100)
+    // Canvas sources rasterise through @napi-rs/canvas.
+    const star = await renderPieceText(JSON.stringify({ source: { kind: 'preset', key: 'star' } }), { times: [0], cols: 60, rows: 24 })
+    expect(star.replace(/\s|t=0s/g, '').length).toBeGreaterThan(100)
   })
 
   it('gallery and guide are complete', () => {

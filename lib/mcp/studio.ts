@@ -1,7 +1,8 @@
 import { existsSync, mkdirSync, readFileSync, readdirSync, statSync, writeFileSync } from 'node:fs'
 import { dirname, join, relative, resolve, sep } from 'node:path'
 import { mergeConfig } from '../ascii/config'
-import { canRenderHeadless, renderHeadless } from '../ascii/headless'
+import { loadPieceAssets } from '../ascii/assets'
+import { createHeadlessPlayer } from '../ascii/headless'
 import { FRAME_SUFFIX, PIECE_SUFFIX, parsePiece, pieceStem, serializePiece, type Piece } from '../ascii/piece'
 import { buildInstructions } from '../ascii/world-prompt'
 import { WORLD_PRESETS, getWorldPreset } from '../ascii/worlds'
@@ -100,14 +101,16 @@ export function validatePiece(json: string): PieceReport {
   return { piece, errors: [], warnings }
 }
 
-export function renderPieceText(json: string, opts: { times?: number[]; cols?: number; rows?: number } = {}): string {
+/** Headless text frames of any piece; image / text / preset geometry rasterises via @napi-rs/canvas. */
+export async function renderPieceText(json: string, opts: { times?: number[]; cols?: number; rows?: number; baseDir?: string } = {}): Promise<string> {
   const report = validatePiece(json)
   if (!report.piece) throw new Error(report.errors.join('; '))
-  if (!canRenderHeadless(report.piece))
-    throw new Error(`"${report.piece.source.kind}" pieces render only in the studio — open the piece there and read its .frame.txt`)
-  const { frames, skipped } = renderHeadless(report.piece, opts)
-  const parts = frames.map((f) => `t = ${f.t}s\n${f.text || '(empty frame)'}`)
-  if (skipped.length) parts.push(`Not rendered headlessly (text/image geometry; visible in the studio): ${skipped.join(', ')}`)
+  const { times = [0, 2], cols = 96, rows = 40, baseDir } = opts
+  const assets = await loadPieceAssets(report.piece, { cols, rows, baseDir })
+  const player = createHeadlessPlayer(report.piece, { cols, rows, assets })
+  const parts = times.map((t) => `t = ${t}s\n${player.render(t) || '(empty frame)'}`)
+  const missing = [...player.skipped, ...assets.errors]
+  if (missing.length) parts.push(`Not rendered: ${missing.join('; ')}`)
   if (report.warnings.length) parts.push(`Warnings:\n- ${report.warnings.join('\n- ')}`)
   return parts.join('\n\n')
 }

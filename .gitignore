@@ -24,3 +24,6 @@ public/r/
 /.claude/skills/
 /.agents/
 .env*
+
+# terminal package build
+packages/terminal/dist/

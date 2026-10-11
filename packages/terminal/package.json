@@ -1,0 +1,14 @@
+{
+  "name": "ohmyascii",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Play ohmyascii pieces — animated ASCII worlds, models, logos and text — in any terminal.",
+  "type": "module",
+  "bin": { "ohmyascii": "./dist/bin.js" },
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": { ".": { "types": "./dist/index.d.ts", "import": "./dist/index.js" } },
+  "files": ["dist", "README.md"],
+  "engines": { "node": ">=20" },
+  "dependencies": { "@napi-rs/canvas": "^1.0.10" }
+}

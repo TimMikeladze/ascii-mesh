@@ -44,6 +44,7 @@ interface StudioPanelProps {
   onRecord: () => void
   recording: boolean
   onShare: () => void
+  onCopyTerminal: () => void
   copied: string | null
   /** Rendered as the "Model" section while the scene source is active. */
   modelPanel?: ReactNode
@@ -75,6 +76,7 @@ export function StudioPanel({
   onRecord,
   recording,
   onShare,
+  onCopyTerminal,
   copied,
   modelPanel,
   worldPanel,
@@ -423,15 +425,15 @@ export function StudioPanel({
             { key: 'video', label: recording ? 'Recording…' : 'Video', action: onRecord, disabled: recording },
             { key: 'image', label: copied === 'image' ? 'Copied' : 'Copy PNG', action: onCopyImage },
             { key: 'text', label: copied === 'text' ? 'Copied' : 'Copy text', action: onCopyText },
-            { key: 'share', label: copied === 'share' ? 'Copied' : 'Share link', action: onShare, full: true },
+            { key: 'terminal', label: copied === 'terminal' ? 'Copied' : 'Terminal', action: onCopyTerminal },
+            { key: 'share', label: copied === 'share' ? 'Copied' : 'Share link', action: onShare },
           ].map((b) => (
             <button
               key={b.key}
               type="button"
               onClick={b.action}
               disabled={b.disabled}
-              data-full={b.full || undefined}
-              className="h-9 border border-border text-[11px] tracking-widest uppercase transition-colors hover:border-foreground hover:bg-foreground hover:text-background focus-visible:outline focus-visible:outline-1 focus-visible:outline-dashed focus-visible:outline-offset-2 disabled:pointer-events-none disabled:opacity-60 data-full:col-span-3"
+              className="h-9 border border-border text-[11px] tracking-widest uppercase transition-colors hover:border-foreground hover:bg-foreground hover:text-background focus-visible:outline focus-visible:outline-1 focus-visible:outline-dashed focus-visible:outline-offset-2 disabled:pointer-events-none disabled:opacity-60"
             >
               {b.label}
             </button>
